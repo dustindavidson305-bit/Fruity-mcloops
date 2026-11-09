@@ -227,7 +227,246 @@ check("v2 triggerSound resolves custom: ids via buffer registry",
     { sound: "custom:abc123", steps: "x" + ".".repeat(63), volume: 0.8, pan: 0, mute: false, solo: false }] }));
   check("v2 parseProject keeps custom: track sounds", stc.tracks[0].sound === "custom:abc123");
 }
-check("v2 version text present", html.includes("v2.0"));
+check("v2 version text present", html.includes("v2.0") || html.includes("v2.1"));
+
+/* ---------- v2.1: scales & pitch ---------- */
+["chromatic","major","naturalMinor","harmonicMinor","majorPent","minorPent","blues","dorian","mixolydian"]
+  .forEach(k => check("v2.1 scale exists: " + k,
+    !!FM.SCALES[k] && Array.isArray(FM.SCALES[k].intervals) && FM.SCALE_NAMES.includes(k)));
+check("v2.1 major intervals exact",
+  JSON.stringify(FM.SCALES.major.intervals) === JSON.stringify([0,2,4,5,7,9,11]));
+check("v2.1 blues has the flat-5", FM.SCALES.blues.intervals.includes(6) && FM.SCALES.blues.intervals.length === 6);
+check("v2.1 pentatonics have 5 notes",
+  FM.SCALES.majorPent.intervals.length === 5 && FM.SCALES.minorPent.intervals.length === 5);
+check("v2.1 chromatic has all 12", FM.SCALES.chromatic.intervals.length === 12);
+check("v2.1 noteToFreq A4 = 440", Math.abs(FM.noteToFreq(69) - 440) < 0.01);
+check("v2.1 noteToFreq C4 ≈ 261.63", Math.abs(FM.noteToFreq(60) - 261.63) < 0.05);
+check("v2.1 noteToFreq octave doubles", Math.abs(FM.noteToFreq(72) / FM.noteToFreq(60) - 2) < 1e-9);
+check("v2.1 noteName", FM.noteName(60) === "C4" && FM.noteName(69) === "A4" && FM.noteName(48) === "C3");
+check("v2.1 scale degree 0 = root",
+  Math.abs(FM.scaleDegreeFreq(60, "major", 0) - FM.noteToFreq(60)) < 1e-9);
+check("v2.1 scale degree wraps to octave",
+  Math.abs(FM.scaleDegreeFreq(60, "major", 7) - FM.noteToFreq(72)) < 1e-9);
+check("v2.1 major degree 2 from C is E",
+  Math.abs(FM.scaleDegreeFreq(60, "major", 2) - FM.noteToFreq(64)) < 1e-9);
+check("v2.1 minor degree 2 from A is C (flattened 3rd)",
+  Math.abs(FM.scaleDegreeFreq(57, "naturalMinor", 2) - FM.noteToFreq(60)) < 1e-9);
+check("v2.1 scaleContains: E in C major, Eb not",
+  FM.scaleContains(0, "major", 64) === true && FM.scaleContains(0, "major", 63) === false);
+check("v2.1 scaleContains: Eb in C minor",
+  FM.scaleContains(0, "naturalMinor", 63) === true);
+{
+  const tr = FM.mkTrack("sub");
+  check("v2.1 mkTrack pitch defaults (C major, root C3, no shift)",
+    tr.key === 0 && tr.scale === "major" && tr.rootNote === 48 && tr.octave === 0 && tr.transpose === 0);
+  check("v2.1 default pitch factor is exactly 1", FM.trackPitchFactor(tr) === 1);
+  check("v2.1 default root freq is C3", Math.abs(FM.trackRootFreq(tr) - FM.noteToFreq(48)) < 1e-9);
+  tr.transpose = 12;
+  check("v2.1 transpose +12 doubles the factor", Math.abs(FM.trackPitchFactor(tr) - 2) < 1e-9);
+  tr.transpose = 0; tr.octave = -1;
+  check("v2.1 octave -1 halves the factor", Math.abs(FM.trackPitchFactor(tr) - 0.5) < 1e-9);
+  tr.octave = 0; tr.rootNote = 60;
+  check("v2.1 root C4 doubles the factor", Math.abs(FM.trackPitchFactor(tr) - 2) < 1e-9);
+  const dirty = FM.sanitizeTrackPitch({ key: 99, scale: "nope", rootNote: 500, octave: -9, transpose: 40 });
+  check("v2.1 sanitizeTrackPitch clamps junk",
+    dirty.key === 11 && dirty.scale === "major" && dirty.rootNote === 96 && dirty.octave === -2 && dirty.transpose === 12);
+}
+
+/* ---------- v2.1: morph & tone defaults + persistence ---------- */
+{
+  const tr = FM.mkTrack("kick");
+  check("v2.1 mkTrack morph defaults", tr.morph === 0 && tr.morphTarget === "");
+  check("v2.1 mkTrack tone defaults are neutral",
+    tr.tone.cutoff === 18000 && tr.tone.drive === 0 && tr.tone.attack === 1 && tr.tone.decay === 1);
+  check("v2.1 sanitizeTone clamps",
+    FM.sanitizeTone({ cutoff: 50 }).cutoff === 100 && FM.sanitizeTone({ attack: 99 }).attack === 4 &&
+    FM.sanitizeTone(null).cutoff === 18000);
+  tr.key = 7; tr.scale = "dorian"; tr.rootNote = 55; tr.octave = 1; tr.transpose = -3;
+  tr.morph = 65; tr.morphTarget = "wobble";
+  tr.tone = { cutoff: 1200, resonance: 8, drive: 40, attack: 2, decay: 0.5 };
+  const st = { bpm: 128, swing: 4, fx: Object.assign({}, FM.DEFAULT_FX), tracks: [tr] };
+  const out = FM.parseProject(FM.serializeProject(st));
+  const o = out.tracks[0];
+  check("v2.1 project round-trip pitch fields",
+    o.key === 7 && o.scale === "dorian" && o.rootNote === 55 && o.octave === 1 && o.transpose === -3);
+  check("v2.1 project round-trip morph fields", o.morph === 65 && o.morphTarget === "wobble");
+  check("v2.1 project round-trip tone fields",
+    o.tone.cutoff === 1200 && o.tone.resonance === 8 && o.tone.drive === 40 && o.tone.attack === 2 && o.tone.decay === 0.5);
+  check("v2.1 serialize stamps format version 3", JSON.parse(FM.serializeProject(st)).version === 3);
+  /* backward compatibility: a v2-format file (no new fields) parses to defaults */
+  const v2file = JSON.stringify({ app: "FruityMcLoops", version: 2, bpm: 130, swing: 0,
+    fx: FM.DEFAULT_FX, tracks: [{ sound: "kick", steps: "x".repeat(64), volume: 0.9, pan: 0, mute: false, solo: false }] });
+  const back = FM.parseProject(v2file).tracks[0];
+  check("v2.1 v2-format projects load with pitch/morph/tone defaults",
+    back.key === 0 && back.scale === "major" && back.rootNote === 48 && back.morph === 0 &&
+    back.morphTarget === "" && back.tone.cutoff === 18000 && back.tone.attack === 1);
+  const badTarget = FM.parseProject(JSON.stringify({ tracks: [
+    { sound: "kick", steps: "x".repeat(64), morphTarget: "not-a-sound" }] }));
+  check("v2.1 parseProject drops an invalid morph target", badTarget.tracks[0].morphTarget === "");
+}
+/* morph/tone execution on the stub ctx */
+{
+  const fctx = fakeCtx(), dest = fakeNode();
+  const chain = FM.buildToneChain(fctx, FM.mkTrack("kick"), dest);
+  check("v2.1 buildToneChain returns input/filter/gain",
+    !!chain.input && !!chain.filter && !!chain.gain);
+  const plain = FM.mkTrack("kick");
+  check("v2.1 playTrackSound morph=0 plays", FM.playTrackSound(fctx, dest, 0, plain, null, {}) === true);
+  const morphed = FM.mkTrack("kick");
+  morphed.morph = 50; morphed.morphTarget = "snare";
+  check("v2.1 playTrackSound morph>0 blends both sounds",
+    FM.playTrackSound(fctx, dest, 0, morphed, null, {}) === true);
+  const toned = FM.mkTrack("kick");
+  toned.tone.attack = 3; toned.tone.decay = 0.3;
+  check("v2.1 playTrackSound with attack/decay shaping plays",
+    FM.playTrackSound(fctx, dest, 0, toned, null, {}) === true);
+  const pf = FM.mkTrack("sub");
+  check("v2.1 triggerSound accepts pitchFactor opts",
+    FM.triggerSound(fctx, dest, 0, "sub", null, { pitchFactor: 2 }) === true);
+}
+
+/* ---------- v2.1: stem math ---------- */
+check("v2.1 stem full mix is identity",
+  JSON.stringify(FM.stemSample(0.8, -0.3, "full")) === JSON.stringify([0.8, -0.3]));
+{
+  const [l, r] = FM.stemSample(0.8, 0.2, "instrumental");
+  check("v2.1 instrumental = (L-R)/2 duplicated", Math.abs(l - 0.3) < 1e-9 && Math.abs(r - 0.3) < 1e-9);
+  const [l2, r2] = FM.stemSample(0.8, 0.2, "vocals");
+  check("v2.1 vocals = (L+R)/2 duplicated", Math.abs(l2 - 0.5) < 1e-9 && Math.abs(r2 - 0.5) < 1e-9);
+  const [l3] = FM.stemSample(0.6, 0.6, "instrumental");
+  check("v2.1 centered signal cancels in instrumental mode", Math.abs(l3) < 1e-9);
+  const [l4] = FM.stemSample(0.6, 0.6, "vocals");
+  check("v2.1 centered signal survives in vocals mode", Math.abs(l4 - 0.6) < 1e-9);
+  check("v2.1 stem gains: karaoke inverts the right channel",
+    FM.stemGains("instrumental").lr === -0.5 && FM.stemGains("vocals").ll === 0.5);
+  /* graph builds on a stub ctx with channel split/merge */
+  const fctx2 = Object.assign(fakeCtx(), {
+    createChannelSplitter: fakeNode, createChannelMerger: fakeNode });
+  const chain = FM.buildStemChain(fctx2, "vocals");
+  check("v2.1 buildStemChain returns input/output + setMode",
+    !!chain.input && !!chain.output && typeof chain.setMode === "function");
+  chain.setMode("instrumental");
+  check("v2.1 stem chain exposes all four mixing gains + survives setMode",
+    !!chain.gains.ll && !!chain.gains.lr && !!chain.gains.rl && !!chain.gains.rr &&
+    typeof chain.gains.lr.gain.setTargetAtTime === "function");
+}
+
+/* ---------- v2.1: decks & crossfader ---------- */
+check("v2.1 four decks A-D", JSON.stringify(FM.DECK_LETTERS) === JSON.stringify(["A","B","C","D"]));
+check("v2.1 crossfader smooth: hard left = L full, R silent",
+  Math.abs(FM.crossfaderGain("L", -1) - 1) < 1e-9 && Math.abs(FM.crossfaderGain("R", -1)) < 1e-9);
+check("v2.1 crossfader smooth: center is equal power ~0.707",
+  Math.abs(FM.crossfaderGain("L", 0) - Math.SQRT1_2) < 1e-3 &&
+  Math.abs(FM.crossfaderGain("R", 0) - Math.SQRT1_2) < 1e-3);
+check("v2.1 crossfader cut: center keeps both, far side kills",
+  FM.crossfaderGain("L", 0, "cut") > 0.49 && FM.crossfaderGain("R", 1, "cut") === 1 &&
+  FM.crossfaderGain("L", 1, "cut") === 0);
+check("v2.1 crossfader sharp: stays hot past center",
+  FM.crossfaderGain("L", 0.5, "sharp") > 0.7 && FM.crossfaderGain("L", -0.5, "sharp") === 1);
+check("v2.1 syncRate matches BPM ratio", FM.syncRate(128, 64) === 2 && FM.syncRate(120, 120) === 1);
+check("v2.1 syncRate needs both BPMs", FM.syncRate(0, 120) === null && FM.syncRate(120, 0) === null);
+check("v2.1 syncRate clamps", FM.syncRate(200, 50) === 2 && FM.syncRate(50, 200) === 0.5);
+check("v2.1 deck UI is generated (4 decks, crossfader, play all)",
+  html.includes('id="decksWrap"') && html.includes("buildDeckUI") &&
+  html.includes('id="xfader"') && html.includes('id="playAllBtn"') && html.includes('id="stopAllBtn"'));
+check("v2.1 pitch & scale panel + piano exist",
+  html.includes('id="labTrackSel"') && html.includes('id="pianoWrap"') &&
+  html.includes('id="labKey"') && html.includes('id="labScale"') && html.includes("pianoTap"));
+check("v2.1 morph & tone controls exist",
+  html.includes('id="labMorph"') && html.includes('id="labMorphTarget"') &&
+  html.includes('id="labCutoff"') && html.includes('id="labAttack"') && html.includes('id="labDecay"'));
+check("v2.1 stem UI + honest help text",
+  html.includes("Vocals Only") && html.includes("karaoke") &&
+  html.includes("not AI separation") && html.includes("Download stem") === false &&
+  html.includes("downloadDeckStem"));
+
+/* ---------- v2.1 DJ: settings, EQ, FX registry, loop/tap math ---------- */
+check("v2.1 DJ settings defaults",
+  FM.DEFAULT_DJ_SETTINGS.xfCurve === "smooth" && FM.DEFAULT_DJ_SETTINGS.pitchRange === 16 &&
+  FM.DEFAULT_DJ_SETTINGS.quantize === true && FM.DEFAULT_DJ_SETTINGS.limiter === true);
+check("v2.1 sanitizeDJSettings keeps valid + repairs junk",
+  FM.sanitizeDJSettings({ xfCurve: "cut", pitchRange: 50, quantize: false, limiter: false }).xfCurve === "cut" &&
+  FM.sanitizeDJSettings({ xfCurve: "wild", pitchRange: 33 }).xfCurve === "smooth" &&
+  FM.sanitizeDJSettings({ xfCurve: "wild", pitchRange: 33 }).pitchRange === 16 &&
+  FM.sanitizeDJSettings(null).quantize === true);
+check("v2.1 settings storage key is stable", FM.DJ_SETTINGS_KEY === "fm_dj_settings_v1");
+check("v2.1 settings persist via localStorage in app code",
+  html.includes("localStorage.setItem(DJ_SETTINGS_KEY") && html.includes('id="djXfCurve"') &&
+  html.includes('id="djQuantize"') && html.includes('id="djLimiter"'));
+check("v2.1 EQ: center is 0 dB, boost is +24 max",
+  FM.eqDbFromSlider(0) === 0 && Math.abs(FM.eqDbFromSlider(50) - 24) < 1e-9);
+check("v2.1 EQ: bottom of travel is a full kill",
+  FM.eqDbFromSlider(-50) <= -40 && FM.isEqKill(-50) === true && FM.isEqKill(-49) === false);
+check("v2.1 deck FX registry has the dubstep core set",
+  ["filter","echo","reverb","wobble","crush","flanger"].every(id => FM.DECK_FX_IDS.includes(id)));
+check("v2.1 wobble divisions include dotted + triplet",
+  FM.divisionBeats("1/8d") === 0.75 && Math.abs(FM.divisionBeats("1/8t") - 1/3) < 1e-9 &&
+  FM.divisionBeats("1/4") === 1 && FM.divisionBeats("1/2") === 2);
+check("v2.1 wobbleHz: 140 BPM quarter-note cycle = 2.33 Hz",
+  Math.abs(FM.wobbleHz(140, "1/4") - 140 / 60) < 1e-9);
+check("v2.1 wobbleHz: 140 BPM 1/8 = double rate",
+  Math.abs(FM.wobbleHz(140, "1/8") - 2 * 140 / 60) < 1e-9);
+check("v2.1 echoSeconds: dotted quarter at 120 = 0.75s",
+  Math.abs(FM.echoSeconds(120, "1/4d") - 0.75) < 1e-9);
+check("v2.1 beatSeconds", Math.abs(FM.beatSeconds(120) - 0.5) < 1e-9);
+check("v2.1 autoLoopEnd: 4 beats at 120 from 1.0 = 3.0",
+  Math.abs(FM.autoLoopEnd(1.0, 4, 120, 100) - 3.0) < 1e-9);
+check("v2.1 autoLoopEnd clamps to song end", FM.autoLoopEnd(9.0, 8, 120, 10) === 10);
+check("v2.1 clampLoopRegion keeps a sane region",
+  FM.clampLoopRegion(-5, 999, 10).start === 0 && FM.clampLoopRegion(-5, 999, 10).end === 10 &&
+  FM.clampLoopRegion(5, 5, 10).end > FM.clampLoopRegion(5, 5, 10).start);
+check("v2.1 quantizeTime snaps to the beat grid",
+  Math.abs(FM.quantizeTime(1.24, 120, 0) - 1.0) < 1e-9 &&
+  Math.abs(FM.quantizeTime(1.26, 120, 0) - 1.5) < 1e-9 &&
+  FM.quantizeTime(1.24, 0, 0) === 1.24);
+check("v2.1 calcTapBpm from 500ms taps = 120",
+  FM.calcTapBpm([0, 500, 1000, 1500]) === 120 && FM.calcTapBpm([0]) === null);
+check("v2.1 pitchFaderRate maps slider through range",
+  FM.pitchFaderRate(0, 16) === 1 && Math.abs(FM.pitchFaderRate(100, 16) - 1.16) < 1e-9 &&
+  Math.abs(FM.pitchFaderRate(-100, 50) - 0.5) < 1e-9);
+check("v2.1 deck UI includes EQ, hot cues, loops, tap, brake",
+  html.includes("cuePad") && html.includes("hotCuePress") && html.includes("setAutoLoop") &&
+  html.includes("calcTapBpm") && html.includes("BRAKE") && html.includes("SPINBACK") &&
+  html.includes("eqLow") && html.includes("buildDeckFx"));
+check("v2.1 master recording wired to Downloads",
+  html.includes('id="recMixBtn"') && html.includes("createMediaStreamDestination") &&
+  html.includes("MediaRecorder") && html.includes("toggleMixRec"));
+check("v2.1 hot cue storage shape: 4 slots, null or seconds",
+  JSON.stringify(FM.defaultHotCues()) === "[null,null,null,null]" &&
+  JSON.stringify(FM.sanitizeHotCues([1.5, -2, "x", 30], 10)) === "[1.5,null,null,null]" &&
+  FM.sanitizeHotCues([2, 3], 10)[1] === 3);
+
+/* ---------- v2.1 sampling: URL validation, slice math, naming ---------- */
+check("v2.1 validateSampleUrl accepts a direct audio file",
+  FM.validateSampleUrl("https://example.com/loops/kick.mp3").ok === true &&
+  FM.validateSampleUrl("https://example.com/a/break.wav?dl=1").ok === true);
+check("v2.1 validateSampleUrl rejects streaming pages",
+  FM.validateSampleUrl("https://www.youtube.com/watch?v=abc").ok === false &&
+  FM.validateSampleUrl("https://soundcloud.com/x/y").ok === false);
+check("v2.1 validateSampleUrl rejects non-http + non-audio",
+  FM.validateSampleUrl("ftp://x.com/a.mp3").ok === false &&
+  FM.validateSampleUrl("https://x.com/page.html").ok === false &&
+  FM.validateSampleUrl("").ok === false);
+check("v2.1 validateSampleUrl explains itself",
+  /direct audio/.test(FM.validateSampleUrl("https://youtu.be/abc").reason));
+check("v2.1 sliceRange clamps to the buffer",
+  FM.sliceRange(-5, 999, 30).start === 0 && FM.sliceRange(-5, 999, 30).end === 30 &&
+  FM.sliceRange(12.5, 16.25, 30).start === 12.5 && FM.sliceRange(12.5, 16.25, 30).end === 16.25);
+check("v2.1 sliceRange enforces a minimum slice",
+  FM.sliceRange(10, 10, 30).end - FM.sliceRange(10, 10, 30).start >= 0.05);
+check("v2.1 deckSampleName format",
+  FM.deckSampleName("A", 12, 16.4) === "Deck A sample 0:12–0:16" &&
+  FM.deckSampleName("C", 65, 69).startsWith("Deck C sample 1:05"));
+check("v2.1 sampling UI exists (mic, URL, deck chop)",
+  html.includes('id="micRecBtn"') && html.includes('id="sampleUrl"') &&
+  html.includes("grabSampleUrl") && html.includes("getUserMedia") &&
+  html.includes("chopDeckSample") && html.includes("addCustomSound"));
+check("v2.1 Android wrapper grants mic to the page",
+  fs.readFileSync(path.join(__dirname, "..", "manual-build", "android", "app", "src", "main", "AndroidManifest.xml"), "utf8")
+    .includes("RECORD_AUDIO") &&
+  fs.readFileSync(path.join(__dirname, "..", "manual-build", "android", "app", "src", "main", "java", "com", "delukz", "fruitymcloops", "MainActivity.java"), "utf8")
+    .includes("onPermissionRequest"));
+check("v2.1 version text present", html.includes("v2.1"));
 
 console.log("\n" + pass + " passed, " + fail + " failed");
 process.exit(fail ? 1 : 0);

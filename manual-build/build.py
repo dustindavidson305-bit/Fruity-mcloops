@@ -23,8 +23,8 @@ BUILD = f"{APP_ROOT}/manual-build"
 APP_ID = "com.delukz.fruitymcloops"
 MIN_SDK = "24"
 TARGET_SDK = "35"
-VERSION_CODE = "2"
-VERSION_NAME = "2.0"
+VERSION_CODE = "3"
+VERSION_NAME = "2.1"
 
 ENV = dict(os.environ)
 _jdk_candidates = []

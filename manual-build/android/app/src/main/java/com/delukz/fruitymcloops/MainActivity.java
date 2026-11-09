@@ -1,11 +1,15 @@
 package com.delukz.fruitymcloops;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.WindowManager;
+import android.webkit.PermissionRequest;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -20,10 +24,16 @@ import android.webkit.WebViewClient;
  * the app's <input type="file"> elements (MP3 loader, project loader)
  * do nothing in a WebView. We bridge them to Android's file picker
  * (ACTION_GET_CONTENT) and hand the picked URIs back to the page.
+ *
+ * v2.1: the app can also record mic samples via getUserMedia. That needs
+ * the RECORD_AUDIO manifest permission, the runtime permission grant
+ * below, and WebChromeClient.onPermissionRequest granting
+ * RESOURCE_AUDIO_CAPTURE to our own bundled page.
  */
 public class MainActivity extends Activity {
 
     private static final int FILE_CHOOSER_REQUEST = 1001;
+    private static final int MIC_PERMISSION_REQUEST = 1002;
 
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
@@ -47,8 +57,38 @@ public class MainActivity extends Activity {
         settings.setBuiltInZoomControls(false);
         settings.setSupportZoom(false);
 
+        /* Ask for the mic up front so the sample recorder works first try. */
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                && checkSelfPermission(Manifest.permission.RECORD_AUDIO)
+                        != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{ Manifest.permission.RECORD_AUDIO },
+                    MIC_PERMISSION_REQUEST);
+        }
+
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onPermissionRequest(PermissionRequest request) {
+                /* Only our bundled page ever loads, so grant audio capture
+                   when the OS-level permission is in place; deny otherwise
+                   (the page then shows its own "mic denied" message). */
+                boolean micGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.M
+                        || checkSelfPermission(Manifest.permission.RECORD_AUDIO)
+                                == PackageManager.PERMISSION_GRANTED;
+                String[] wanted = request.getResources();
+                boolean onlyAudio = wanted.length > 0;
+                for (String r : wanted) {
+                    if (!PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(r)) {
+                        onlyAudio = false;
+                    }
+                }
+                if (micGranted && onlyAudio) {
+                    request.grant(wanted);
+                } else {
+                    request.deny();
+                }
+            }
+
             @Override
             public boolean onShowFileChooser(WebView view,
                                              ValueCallback<Uri[]> callback,

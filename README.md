@@ -4,14 +4,37 @@ A pocket DJ/remix studio for your phone. Load your own MP3, scratch it
 like vinyl, run it through a stack of effects, and build beats on a big
 step sequencer full of synthesized sounds. **v2.0** adds a huge sound
 library, a Downloads page full of demo songs, and a custom-sound slot
-for your own sample libraries.
+for your own sample libraries. **v2.1** turns it into a 4-deck DJ
+workstation with stem splitting, per-track pitch & scale, morphing,
+and sampling.
 
 ## What it does
 
-- **MP3 deck** — load any MP3 (file picker or drag-and-drop), waveform
-  display with click-to-seek, play/pause/stop, loop.
-- **Scratch board** — a big platter: drag it and the track speeds up,
-  slows down, and reverses with your finger, vinyl-style.
+- **4 DJ decks (A–D)** — each loads its own song (picker or
+  drag-and-drop), waveform with click-to-seek, play/pause/stop, loop,
+  elapsed/remaining time, scratch platter, pitch fader (±8/16/50%),
+  trim, 3-band EQ with full kill, BPM field + tap tempo + sync-to-A,
+  4 hot cues (quantize-aware, long-press clears), loop in/out +
+  1/2/4/8-beat auto-loops, vinyl brake + spinback, and a per-deck FX
+  slot (sweep filter, BPM echo, reverb, dubstep wobble with dotted /
+  triplet divisions, bitcrusher, flanger). Crossfader with per-deck
+  L/R assignment and smooth/sharp/cut curves, Play All / Stop All.
+- **Stem modes per deck** — Full / Instrumental (karaoke) / Vocals
+  Only, using the classic center-channel trick (side = L−R, center =
+  (L+R)/2) live during playback and scratching, plus a Download Stem
+  WAV render. Best on stereo mixes with centered vocals; not AI
+  separation. Deck A instrumental + Deck B vocals = instant mashup.
+- **Track Lab (sequencer)** — per track: key + scale (9 scales) with a
+  2-octave piano that previews and sets the root note, octave shift,
+  transpose; morph any sound into any other (0–100% blend); tone
+  shaping (cutoff, resonance, drive, attack/decay scale) on every hit.
+  All of it saves into project files (v2 projects still load).
+- **Sampling** — record mic samples straight into My Sounds (Android
+  mic permission is bridged in the wrapper), grab samples from direct
+  audio URLs, or ✂ chop the loop region / any start–end slice out of
+  a loaded deck into My Sounds.
+- **Record your mix** — capture the master output from the Downloads
+  page and download the take.
 - **FX rack** (on the MP3 channel) — distortion, bitcrush, lowpass +
   highpass filters, stereo pan, feedback delay, reverb, deck volume,
   master volume, and a big red **KILL SWITCH** that cuts the sound
