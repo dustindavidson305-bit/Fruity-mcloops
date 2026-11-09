@@ -167,5 +167,67 @@ function fakeCtx(){
   check("triggerSound synth plays", FM.triggerSound(fctx, dest, 0, "kick", null) === true);
 }
 
+/* ---------- v2.0: registry size + categories ---------- */
+check("v2 registry total >= 65 sounds", FM.SOUND_NAMES.length >= 65, "got " + FM.SOUND_NAMES.length);
+check("v2 at least 50 NEW sounds beyond the original 15",
+  FM.SOUND_NAMES.filter(n => !SPEC_SOUNDS.includes(n)).length >= 50,
+  "new=" + FM.SOUND_NAMES.filter(n => !SPEC_SOUNDS.includes(n)).length);
+FM.SOUND_NAMES.forEach(n =>
+  check("v2 sound has a valid category: " + n,
+    !!FM.SOUNDS[n].cat && FM.SOUND_CATEGORIES.includes(FM.SOUNDS[n].cat) && FM.soundCategory(n) === FM.SOUNDS[n].cat));
+["Drums", "Bass", "Synths", "Pads", "Keys", "FX"].forEach(c =>
+  check("v2 category has >= 5 sounds: " + c,
+    FM.SOUND_NAMES.filter(n => FM.SOUNDS[n].cat === c).length >= 5,
+    "count=" + FM.SOUND_NAMES.filter(n => FM.SOUNDS[n].cat === c).length));
+check("v2 library UI category filter exists",
+  html.includes('id="libCatFilter"') && html.includes('id="libGrid"') && html.includes("renderLibrary"));
+
+/* ---------- v2.0: demo songs (Downloads tab) ---------- */
+check("v2 demo songs >= 6", Array.isArray(FM.DEMO_SONGS) && FM.DEMO_SONGS.length >= 6,
+  "got " + (FM.DEMO_SONGS || []).length);
+check("v2 demo genres >= 5 distinct",
+  new Set(FM.DEMO_SONGS.map(d => d.genre)).size >= 5);
+FM.DEMO_SONGS.forEach(d => {
+  check("v2 demo has name/genre/bpm: " + d.id, !!d.name && !!d.genre && d.bpm >= 60 && d.bpm <= 200);
+  check("v2 demo references only existing sounds: " + d.id,
+    d.tracks.every(row => !!FM.SOUNDS[row[0]]));
+  const st = FM.demoToState(d);
+  check("v2 demo builds a full project: " + d.id,
+    !!st && st.tracks.length >= 5 && st.tracks.every(t => t.steps.length === 64));
+  check("v2 demo every row has hits: " + d.id,
+    st.tracks.every(t => t.steps.some(Boolean)));
+  const back = FM.parseProject(FM.serializeProject(st));
+  check("v2 demo survives project round-trip: " + d.id, back.tracks.length === st.tracks.length);
+});
+check("v2 Downloads panel + demo buttons exist",
+  html.includes('id="demoList"') && html.includes("renderDownloads") &&
+  html.includes("downloadDemoWav") && html.includes('id="ownSaveBtn"') && html.includes('id="ownWavBtn"'));
+
+/* ---------- v2.0: custom sound import / extension slot ---------- */
+const customTag = (html.match(/<input[^>]*id="customFile"[^>]*>/) || [""])[0];
+const acceptExts = (customTag.match(/\.[a-z0-9]+/g) || []).map(x => x.slice(1));
+["mp3","wav","ogg","opus","flac","m4a","aac","aif","aiff","webm","mp4","amr","caf","mid","midi","wma"]
+  .forEach(ext => check("v2 custom accept includes ." + ext, acceptExts.includes(ext)));
+check("v2 custom input allows multiple files", /id="customFile"[^>]*multiple/.test(customTag));
+check("v2 CUSTOM_ACCEPT export is broad (>= 15 extensions)",
+  typeof FM.CUSTOM_ACCEPT === "string" && (FM.CUSTOM_ACCEPT.match(/\./g) || []).length >= 15);
+check("v2 IndexedDB persistence functions exist",
+  typeof FM.openCustomDB === "function" && typeof FM.saveCustomSoundRecord === "function" &&
+  typeof FM.loadCustomSoundRecords === "function" && typeof FM.deleteCustomSoundRecord === "function");
+check("v2 app uses IndexedDB + decodeAudioData for imports",
+  html.includes("indexedDB") && html.includes("loadCustomSoundRecords") &&
+  html.includes("decodeAudioData") && html.includes("handleCustomFiles"));
+check("v2 triggerSound resolves custom: ids via buffer registry",
+  html.includes('indexOf("custom:")') && html.includes("CUSTOM_BUFFERS"));
+{
+  const fctx = fakeCtx(), dest = fakeNode();
+  check("v2 triggerSound custom id without buffer is a safe no-op",
+    FM.triggerSound(fctx, dest, 0, "custom:missing", null) === false);
+  const stc = FM.parseProject(JSON.stringify({ tracks: [
+    { sound: "custom:abc123", steps: "x" + ".".repeat(63), volume: 0.8, pan: 0, mute: false, solo: false }] }));
+  check("v2 parseProject keeps custom: track sounds", stc.tracks[0].sound === "custom:abc123");
+}
+check("v2 version text present", html.includes("v2.0"));
+
 console.log("\n" + pass + " passed, " + fail + " failed");
 process.exit(fail ? 1 : 0);

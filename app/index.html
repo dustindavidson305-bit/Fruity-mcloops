@@ -110,6 +110,16 @@ label.lbl{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1
 #barLabel{font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--green);font-size:14px;}
 .note{font-size:12px;color:var(--dim);line-height:1.5;}
 .hidden{display:none !important;}
+.libgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:6px;margin-top:8px;}
+.libbtn{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:8px 10px;font-size:13px;text-align:left;}
+.libbtn small{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:1px;}
+#customDrop{border:2px dashed var(--line);border-radius:12px;padding:12px;text-align:center;color:var(--dim);font-size:13px;}
+#customDrop.drag{border-color:var(--green);color:var(--green);}
+.custRow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);}
+.custName{flex:1 1 140px;font-weight:700;word-break:break-all;}
+.demoCard{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px;background:var(--panel2);}
+.demoMeta{color:var(--dim);font-size:12px;}
+.tabnote{font-size:12px;color:var(--orange);font-weight:700;}
 #statusLine{font-size:12px;color:var(--green);min-height:16px;margin-top:6px;}
 </style>
 </head>
@@ -124,7 +134,7 @@ label.lbl{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1
 </div>
 
 <h1>🍊 <span class="fm1">FRUITY</span> <span class="fm2">McLOOPS</span></h1>
-<div class="tagline">MP3 remixer • scratch board • step sequencer • dubstep machine</div>
+<div class="tagline">MP3 remixer • scratch board • step sequencer • dubstep machine • v2.0</div>
 
 <!-- ================= MP3 DECK ================= -->
 <div class="panel" id="deckPanel">
@@ -186,6 +196,42 @@ label.lbl{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1
   </div>
 </div>
 
+
+<!-- ================= SOUND LIBRARY ================= -->
+<div class="panel">
+  <h2>🎹 Sound Library</h2>
+  <div class="rowflex">
+    <label class="lbl" style="margin:0;">Category
+      <select id="libCatFilter"></select>
+    </label>
+    <span id="libCount" class="tabnote"></span>
+  </div>
+  <div class="libgrid" id="libGrid"></div>
+  <div class="note" style="margin-top:6px;">Every built-in sound is synthesized live by the app — no samples, works fully offline. Tap any sound to preview it, or assign it to a sequencer track below.</div>
+</div>
+
+<!-- ================= MY SOUNDS (CUSTOM IMPORT) ================= -->
+<div class="panel">
+  <h2>🎧 My Sounds — Custom Sound Slot</h2>
+  <div id="customDrop">
+    <div style="font-weight:700;color:var(--txt);">Drop your own sound files here</div>
+    <div>…or tap IMPORT SOUNDS and pick as many files as you like — a whole pack at once is fine.</div>
+  </div>
+  <div class="rowflex" style="margin:10px 0;">
+    <button id="importSoundsBtn" style="background:var(--orange);color:#160a00;border-color:var(--orange);">📂 IMPORT SOUNDS</button>
+  </div>
+  <div id="customList"></div>
+  <div class="note" style="margin-top:8px;">
+    This slot accepts just about any sound file: MP3, WAV, OGG, Opus, FLAC, M4A/AAC, AIFF, WebM,
+    MP4 audio, 3GP, AMR, CAF, WMA and more — if your device can decode it, it becomes a playable
+    sound you can preview, rename, delete and drop onto any sequencer track, exactly like a built-in.
+    Imported sounds are <b>saved inside the app</b> (IndexedDB) and are still there after you restart it.
+    MIDI files (.mid/.midi) are note files, not audio — they'll be skipped with a note; export them
+    to WAV or MP3 first. Files your device's codec can't decode are reported, never crash the import.
+  </div>
+  <div id="customStatus" class="note" style="color:var(--green);"></div>
+</div>
+
 <!-- ================= SEQUENCER ================= -->
 <div class="panel">
   <h2>🥁 Step Sequencer — 64 steps, unlimited tracks</h2>
@@ -236,10 +282,27 @@ label.lbl{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1
   <div id="statusLine"></div>
 </div>
 
-<div class="note" style="text-align:center;">Fruity McLoops — all sounds are synthesized live. No samples were harmed. 🍊</div>
+<div class="note" style="text-align:center;">Fruity McLoops v2.0 — 75 built-in sounds synthesized live, plus your own custom sounds. No samples were harmed. 🍊</div>
+
+<!-- ================= DOWNLOADS ================= -->
+<div class="panel">
+  <h2>⬇ Downloads — Songs</h2>
+  <div class="note">Built-in demo songs, ready to grab. <b>Load</b> one into the sequencer to remix it,
+  download it as a finished <b>WAV</b>, or take the <b>.json project</b> to reopen any time.
+  Everything is generated inside the app — no downloads from the internet, no hosting, works offline.</div>
+  <div id="demoList" style="margin-top:10px;"></div>
+  <h2 style="margin-top:14px;">🎒 Your own songs</h2>
+  <div class="note">Made something of your own in the sequencer? It's the same deal — save it as a
+  project file or export it as WAV, any time, right here:</div>
+  <div class="rowflex" style="margin-top:8px;">
+    <button id="ownSaveBtn">⬇ SAVE MY SONG (.json)</button>
+    <button id="ownWavBtn" style="background:var(--magenta);color:#fff;border-color:var(--magenta);">🎵 EXPORT MY SONG (WAV)</button>
+  </div>
+</div>
 
 <input type="file" id="mp3File" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac" class="hidden">
 <input type="file" id="projFile" accept=".json,application/json" class="hidden">
+<input type="file" id="customFile" multiple accept="audio/*,.mp3,.wav,.wave,.ogg,.oga,.opus,.flac,.m4a,.aac,.aif,.aiff,.webm,.mp4,.3gp,.amr,.awb,.caf,.mid,.midi,.wma" class="hidden">
 
 <script>
 "use strict";
@@ -335,14 +398,14 @@ function envGain(ctx, t, peak, decay, dest){
    Works in AudioContext AND OfflineAudioContext.
    ============================================================ */
 const SOUNDS = {
-  kick: { label: "Kick Drum", play(ctx, out, t){
+  kick: { label: "Kick Drum", cat: "Drums", play(ctx, out, t){
     const o = ctx.createOscillator(), g = envGain(ctx, t, 1.0, 0.27, out);
     o.type = "sine";
     o.frequency.setValueAtTime(155, t);
     o.frequency.exponentialRampToValueAtTime(42, t + 0.11);
     o.connect(g); o.start(t); o.stop(t + 0.3);
   }},
-  snare: { label: "Snare", play(ctx, out, t){
+  snare: { label: "Snare", cat: "Drums", play(ctx, out, t){
     const n = noiseSource(ctx), bp = ctx.createBiquadFilter();
     bp.type = "bandpass"; bp.frequency.value = 1800; bp.Q.value = 0.8;
     const ng = envGain(ctx, t, 0.7, 0.16, out);
@@ -351,7 +414,7 @@ const SOUNDS = {
     o.type = "triangle"; o.frequency.value = 192;
     o.connect(g); o.start(t); o.stop(t + 0.1);
   }},
-  clap: { label: "Clap", play(ctx, out, t){
+  clap: { label: "Clap", cat: "Drums", play(ctx, out, t){
     const n = noiseSource(ctx), bp = ctx.createBiquadFilter();
     bp.type = "bandpass"; bp.frequency.value = 1200; bp.Q.value = 1.6;
     const g = ctx.createGain();
@@ -365,19 +428,19 @@ const SOUNDS = {
     n.connect(bp); bp.connect(g); g.connect(out);
     n.start(t); n.stop(t + 0.36);
   }},
-  hat: { label: "Closed Hat", play(ctx, out, t){
+  hat: { label: "Closed Hat", cat: "Drums", play(ctx, out, t){
     const n = noiseSource(ctx), hp = ctx.createBiquadFilter();
     hp.type = "highpass"; hp.frequency.value = 8200;
     const g = envGain(ctx, t, 0.42, 0.05, out);
     n.connect(hp); hp.connect(g); n.start(t); n.stop(t + 0.07);
   }},
-  openhat: { label: "Open Hat", play(ctx, out, t){
+  openhat: { label: "Open Hat", cat: "Drums", play(ctx, out, t){
     const n = noiseSource(ctx), hp = ctx.createBiquadFilter();
     hp.type = "highpass"; hp.frequency.value = 7600;
     const g = envGain(ctx, t, 0.4, 0.42, out);
     n.connect(hp); hp.connect(g); n.start(t); n.stop(t + 0.46);
   }},
-  tom: { label: "Tom", play(ctx, out, t, o){
+  tom: { label: "Tom", cat: "Drums", play(ctx, out, t, o){
     const mul = (o && o.pitch) || 1;
     const osc = ctx.createOscillator(), g = envGain(ctx, t, 0.8, 0.26, out);
     osc.type = "sine";
@@ -385,7 +448,7 @@ const SOUNDS = {
     osc.frequency.exponentialRampToValueAtTime(88 * mul, t + 0.18);
     osc.connect(g); osc.start(t); osc.stop(t + 0.3);
   }},
-  rim: { label: "Rimshot", play(ctx, out, t){
+  rim: { label: "Rimshot", cat: "Drums", play(ctx, out, t){
     const o = ctx.createOscillator(), g = envGain(ctx, t, 0.5, 0.035, out);
     o.type = "square"; o.frequency.value = 1720;
     o.connect(g); o.start(t); o.stop(t + 0.045);
@@ -394,7 +457,7 @@ const SOUNDS = {
     const ng = envGain(ctx, t, 0.3, 0.028, out);
     n.connect(hp); hp.connect(ng); n.start(t); n.stop(t + 0.04);
   }},
-  "808": { label: "808 Boom", play(ctx, out, t){
+  "808": { label: "808 Boom", cat: "Bass", play(ctx, out, t){
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = "sine";
     o.frequency.setValueAtTime(110, t);
@@ -403,7 +466,7 @@ const SOUNDS = {
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.95);
     o.connect(g); g.connect(out); o.start(t); o.stop(t + 1.0);
   }},
-  sub: { label: "Sub Bass", play(ctx, out, t, o){
+  sub: { label: "Sub Bass", cat: "Bass", play(ctx, out, t, o){
     const dur = (o && o.dur) || 0.42;
     const osc = ctx.createOscillator(), g = ctx.createGain();
     osc.type = "sine";
@@ -415,7 +478,7 @@ const SOUNDS = {
     g.gain.exponentialRampToValueAtTime(0.001, t + dur);
     osc.connect(g); g.connect(out); osc.start(t); osc.stop(t + dur + 0.05);
   }},
-  wobble: { label: "Dubstep Wobble Bass", play(ctx, out, t, o){
+  wobble: { label: "Dubstep Wobble Bass", cat: "Bass", play(ctx, out, t, o){
     const dur = (o && o.dur) || 0.46, rate = (o && o.rate) || 7;
     const osc = ctx.createOscillator(); osc.type = "sawtooth";
     osc.frequency.value = 55;
@@ -436,7 +499,7 @@ const SOUNDS = {
     osc2.start(t); osc2.stop(t + dur + 0.05);
     lfo.start(t); lfo.stop(t + dur + 0.05);
   }},
-  stab: { label: "Synth Stab", play(ctx, out, t){
+  stab: { label: "Synth Stab", cat: "Synths", play(ctx, out, t){
     const flt = ctx.createBiquadFilter(); flt.type = "lowpass";
     flt.frequency.value = 2600; flt.Q.value = 2;
     const g = envGain(ctx, t, 0.4, 0.19, out);
@@ -447,7 +510,7 @@ const SOUNDS = {
       o.connect(flt); o.start(t); o.stop(t + 0.22);
     });
   }},
-  pluck: { label: "Lead Pluck", play(ctx, out, t, o){
+  pluck: { label: "Lead Pluck", cat: "Synths", play(ctx, out, t, o){
     const f = (o && o.freq) || 660;
     const osc = ctx.createOscillator(); osc.type = "triangle"; osc.frequency.value = f;
     const flt = ctx.createBiquadFilter(); flt.type = "lowpass"; flt.Q.value = 4;
@@ -456,14 +519,14 @@ const SOUNDS = {
     const g = envGain(ctx, t, 0.55, 0.26, out);
     osc.connect(flt); flt.connect(g); osc.start(t); osc.stop(t + 0.3);
   }},
-  laser: { label: "Laser Zap", play(ctx, out, t){
+  laser: { label: "Laser Zap", cat: "FX", play(ctx, out, t){
     const o = ctx.createOscillator(), g = envGain(ctx, t, 0.5, 0.2, out);
     o.type = "sine";
     o.frequency.setValueAtTime(1500, t);
     o.frequency.exponentialRampToValueAtTime(110, t + 0.17);
     o.connect(g); o.start(t); o.stop(t + 0.22);
   }},
-  riser: { label: "Noise Riser", play(ctx, out, t, o){
+  riser: { label: "Noise Riser", cat: "FX", play(ctx, out, t, o){
     const dur = (o && o.dur) || 0.92;
     const n = noiseSource(ctx), bp = ctx.createBiquadFilter();
     bp.type = "bandpass"; bp.Q.value = 1.1;
@@ -476,7 +539,7 @@ const SOUNDS = {
     n.connect(bp); bp.connect(g); g.connect(out);
     n.start(t); n.stop(t + dur + 0.05);
   }},
-  crash: { label: "Crash", play(ctx, out, t){
+  crash: { label: "Crash", cat: "Drums", play(ctx, out, t){
     const n = noiseSource(ctx), hp = ctx.createBiquadFilter();
     hp.type = "highpass"; hp.frequency.value = 5800;
     const g = envGain(ctx, t, 0.5, 1.25, out);
@@ -487,10 +550,539 @@ const SOUNDS = {
     n2.connect(hp2); hp2.connect(g2); n2.start(t); n2.stop(t + 0.75);
   }}
 };
+/* ---------- shared helpers for the v2 sound expansion ---------- */
+function _tone(ctx, out, t, o){
+  const osc = ctx.createOscillator(), g = ctx.createGain();
+  osc.type = o.type || "sine";
+  osc.frequency.setValueAtTime(o.f0, t);
+  if (o.f1) osc.frequency.exponentialRampToValueAtTime(Math.max(1, o.f1), t + (o.ft || o.dur));
+  let node = osc;
+  if (o.lp){ const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = o.lp; if (o.q) f.Q.value = o.q; osc.connect(f); node = f; }
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(o.peak || 0.6, t + (o.a || 0.005));
+  g.gain.exponentialRampToValueAtTime(0.001, t + o.dur);
+  node.connect(g); g.connect(out);
+  osc.start(t); osc.stop(t + o.dur + 0.05);
+}
+function _noise(ctx, out, t, o){
+  const n = noiseSource(ctx), f = ctx.createBiquadFilter();
+  f.type = o.type || "bandpass";
+  f.frequency.setValueAtTime(o.freq, t);
+  if (o.f1) f.frequency.exponentialRampToValueAtTime(Math.max(10, o.f1), t + o.dur);
+  f.Q.value = o.q || 1;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(o.peak || 0.5, t + (o.a || 0.004));
+  g.gain.exponentialRampToValueAtTime(0.001, t + o.dur);
+  n.connect(f); f.connect(g); g.connect(out);
+  n.start(t); n.stop(t + o.dur + 0.05);
+}
+function _fm(ctx, out, t, o){
+  const car = ctx.createOscillator(), mod = ctx.createOscillator(), mg = ctx.createGain(), g = ctx.createGain();
+  car.type = o.type || "sine"; car.frequency.value = o.freq;
+  mod.frequency.value = o.freq * o.ratio;
+  mg.gain.setValueAtTime(o.freq * o.index, t);
+  mg.gain.exponentialRampToValueAtTime(1, t + o.dur);
+  mod.connect(mg); mg.connect(car.frequency);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(o.peak || 0.5, t + (o.a || 0.005));
+  g.gain.exponentialRampToValueAtTime(0.001, t + o.dur);
+  car.connect(g); g.connect(out);
+  car.start(t); car.stop(t + o.dur + 0.05);
+  mod.start(t); mod.stop(t + o.dur + 0.05);
+}
+function _chord(ctx, out, t, o){
+  const g = ctx.createGain();
+  let node = g;
+  if (o.lp){ const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = o.lp; if (o.q) f.Q.value = o.q; f.connect(g); node = f; }
+  const peak = o.peak || 0.26, a = o.a || 0.08;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(peak, t + a);
+  g.gain.setValueAtTime(peak, Math.max(t + a, t + o.dur - 0.15));
+  g.gain.exponentialRampToValueAtTime(0.001, t + o.dur);
+  o.freqs.forEach((fr, i) => {
+    const osc = ctx.createOscillator();
+    osc.type = o.type || "sawtooth"; osc.frequency.value = fr;
+    osc.detune.value = (o.detune || 0) * ((i % 3) - 1);
+    osc.connect(node); osc.start(t); osc.stop(t + o.dur + 0.05);
+  });
+  g.connect(out);
+}
+
+/* ============================================================
+   v2 EXPANSION — 60 more synthesized sounds (zero samples).
+   ============================================================ */
+const NEW_SOUNDS = {
+  /* ----- Drums & percussion ----- */
+  deepkick: { label: "Deep Kick", cat: "Drums", play(ctx, out, t){
+    _tone(ctx, out, t, { f0: 118, f1: 36, ft: 0.14, dur: 0.42, peak: 1.0 });
+    _noise(ctx, out, t, { type: "highpass", freq: 3000, dur: 0.02, peak: 0.25 });
+  }},
+  hardkick: { label: "Hard Kick", cat: "Drums", play(ctx, out, t){
+    _tone(ctx, out, t, { f0: 185, f1: 48, ft: 0.07, dur: 0.24, peak: 1.0 });
+    _tone(ctx, out, t, { type: "square", f0: 950, f1: 300, ft: 0.015, dur: 0.03, peak: 0.3 });
+  }},
+  kick2: { label: "Electro Kick", cat: "Drums", play(ctx, out, t){
+    _tone(ctx, out, t, { f0: 162, f1: 58, ft: 0.09, dur: 0.3, peak: 0.95 });
+    _tone(ctx, out, t, { type: "triangle", f0: 820, dur: 0.018, peak: 0.35 });
+  }},
+  snare2: { label: "Snare 2 (Tight)", cat: "Drums", play(ctx, out, t){
+    _noise(ctx, out, t, { freq: 2400, q: 0.7, dur: 0.11, peak: 0.65 });
+    _tone(ctx, out, t, { type: "triangle", f0: 242, f1: 170, ft: 0.05, dur: 0.07, peak: 0.4 });
+  }},
+  noisesnare: { label: "Noise Snare", cat: "Drums", play(ctx, out, t){
+    _noise(ctx, out, t, { freq: 1000, f1: 3200, q: 0.6, dur: 0.3, peak: 0.6 });
+    _noise(ctx, out, t, { type: "highpass", freq: 6000, dur: 0.18, peak: 0.3 });
+  }},
+  shaker: { label: "Shaker", cat: "Drums", play(ctx, out, t){
+    [0, 0.085].forEach((off, i) =>
+      _noise(ctx, out, t + off, { type: "highpass", freq: 6200, dur: 0.07, peak: i ? 0.3 : 0.42 }));
+  }},
+  tambourine: { label: "Tambourine", cat: "Drums", play(ctx, out, t){
+    _noise(ctx, out, t, { type: "highpass", freq: 7800, dur: 0.28, peak: 0.3 });
+    [5230, 6640, 7910].forEach(f =>
+      _tone(ctx, out, t, { type: "square", f0: f, dur: 0.16, peak: 0.06 }));
+  }},
+  cowbell: { label: "Cowbell", cat: "Drums", play(ctx, out, t){
+    const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 720; bp.Q.value = 1.1;
+    const g = envGain(ctx, t, 0.5, 0.26, out); bp.connect(g);
+    [540, 845].forEach(f => { const o = ctx.createOscillator(); o.type = "square"; o.frequency.value = f; o.connect(bp); o.start(t); o.stop(t + 0.3); });
+  }},
+  conga: { label: "Conga", cat: "Drums", play(ctx, out, t){
+    _tone(ctx, out, t, { f0: 318, f1: 172, ft: 0.1, dur: 0.2, peak: 0.75 });
+    _noise(ctx, out, t, { freq: 2600, dur: 0.03, peak: 0.2 });
+  }},
+  bongo: { label: "Bongo", cat: "Drums", play(ctx, out, t){
+    _tone(ctx, out, t, { f0: 484, f1: 296, ft: 0.07, dur: 0.13, peak: 0.7 });
+  }},
+  electrotom: { label: "Electro Tom", cat: "Drums", play(ctx, out, t){
+    _tone(ctx, out, t, { type: "square", f0: 302, f1: 88, ft: 0.22, dur: 0.32, peak: 0.4, lp: 1600 });
+    _tone(ctx, out, t, { f0: 302, f1: 88, ft: 0.22, dur: 0.32, peak: 0.4 });
+  }},
+  stick: { label: "Cross Stick", cat: "Drums", play(ctx, out, t){
+    _tone(ctx, out, t, { type: "square", f0: 905, dur: 0.032, peak: 0.42 });
+    _noise(ctx, out, t, { type: "highpass", freq: 5000, dur: 0.02, peak: 0.2 });
+  }},
+  woodblock: { label: "Woodblock", cat: "Drums", play(ctx, out, t){
+    _tone(ctx, out, t, { f0: 842, dur: 0.075, peak: 0.6 });
+    _tone(ctx, out, t, { f0: 1244, dur: 0.045, peak: 0.25 });
+  }},
+  pedalhat: { label: "Pedal Hat", cat: "Drums", play(ctx, out, t){
+    _noise(ctx, out, t, { type: "highpass", freq: 9200, dur: 0.035, peak: 0.3 });
+    _tone(ctx, out, t, { type: "square", f0: 10400, dur: 0.02, peak: 0.08 });
+  }},
+  zap: { label: "Perc Zap", cat: "Drums", play(ctx, out, t){
+    _tone(ctx, out, t, { type: "sawtooth", f0: 920, f1: 74, ft: 0.16, dur: 0.19, peak: 0.45, lp: 2800 });
+  }},
+  /* ----- Bass ----- */
+  acidbass: { label: "Acid Bass 303", cat: "Bass", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.4;
+    const osc = ctx.createOscillator(); osc.type = "sawtooth"; osc.frequency.value = 110;
+    const flt = ctx.createBiquadFilter(); flt.type = "lowpass"; flt.Q.value = 13;
+    flt.frequency.setValueAtTime(2900, t);
+    flt.frequency.exponentialRampToValueAtTime(240, t + dur * 0.8);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.6, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    osc.connect(flt); flt.connect(g); g.connect(out);
+    osc.start(t); osc.stop(t + dur + 0.05);
+  }},
+  fmbass: { label: "FM Bass", cat: "Bass", play(ctx, out, t, o){
+    _fm(ctx, out, t, { freq: 55, ratio: 0.5, index: 5, dur: (o && o.dur) || 0.42, peak: 0.75 });
+  }},
+  reese: { label: "Reese Bass", cat: "Bass", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.46;
+    const flt = ctx.createBiquadFilter(); flt.type = "lowpass"; flt.frequency.value = 480;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.5, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    flt.connect(g); g.connect(out);
+    [-9, 0, 9].forEach(d => { const osc = ctx.createOscillator(); osc.type = "sawtooth"; osc.frequency.value = 55; osc.detune.value = d; osc.connect(flt); osc.start(t); osc.stop(t + dur + 0.05); });
+    _tone(ctx, out, t, { f0: 27.5, dur: dur, peak: 0.35 });
+  }},
+  growl: { label: "Growl Bass", cat: "Bass", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.46, rate = (o && o.rate) || 11;
+    const sh = ctx.createWaveShaper(); sh.curve = makeDistortionCurve(65);
+    const flt = ctx.createBiquadFilter(); flt.type = "lowpass"; flt.Q.value = 8;
+    flt.frequency.setValueAtTime(300, t);
+    const lfo = ctx.createOscillator(); lfo.frequency.value = rate;
+    const amt = ctx.createGain(); amt.gain.value = 1300;
+    lfo.connect(amt); amt.connect(flt.frequency);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.55, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    [49, 98.3].forEach((f, i) => { const osc = ctx.createOscillator(); osc.type = i ? "square" : "sawtooth"; osc.frequency.value = f; osc.connect(sh); osc.start(t); osc.stop(t + dur + 0.05); });
+    sh.connect(flt); flt.connect(g); g.connect(out);
+    lfo.start(t); lfo.stop(t + dur + 0.05);
+  }},
+  pluckbass: { label: "Pluck Bass", cat: "Bass", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.36;
+    const osc = ctx.createOscillator(); osc.type = "triangle"; osc.frequency.value = 98;
+    const flt = ctx.createBiquadFilter(); flt.type = "lowpass"; flt.Q.value = 5;
+    flt.frequency.setValueAtTime(1900, t);
+    flt.frequency.exponentialRampToValueAtTime(190, t + dur);
+    const g = envGain(ctx, t, 0.7, dur, out);
+    osc.connect(flt); flt.connect(g); osc.start(t); osc.stop(t + dur + 0.05);
+  }},
+  sinesub2: { label: "Sine Sub (Low E)", cat: "Bass", play(ctx, out, t, o){
+    _tone(ctx, out, t, { f0: 41.2, dur: (o && o.dur) || 0.6, peak: 0.9, a: 0.01 });
+  }},
+  sawsub: { label: "Saw Sub", cat: "Bass", play(ctx, out, t, o){
+    _tone(ctx, out, t, { type: "sawtooth", f0: 55, dur: (o && o.dur) || 0.44, peak: 0.5, lp: 210 });
+  }},
+  rubberbass: { label: "Rubber Bass", cat: "Bass", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.38;
+    const osc = ctx.createOscillator(); osc.type = "sine";
+    osc.frequency.setValueAtTime(88, t);
+    osc.frequency.exponentialRampToValueAtTime(168, t + 0.07);
+    osc.frequency.exponentialRampToValueAtTime(66, t + dur);
+    const g = envGain(ctx, t, 0.8, dur, out);
+    osc.connect(g); osc.start(t); osc.stop(t + dur + 0.05);
+  }},
+  octavebass: { label: "Octave Bass", cat: "Bass", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.42, half = dur / 2;
+    _tone(ctx, out, t, { type: "square", f0: 55, dur: half, peak: 0.45, lp: 700 });
+    _tone(ctx, out, t + half, { type: "square", f0: 110, dur: half, peak: 0.45, lp: 900 });
+  }},
+  /* ----- Synths & leads ----- */
+  squarelead: { label: "Square Lead", cat: "Synths", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.5;
+    const osc = ctx.createOscillator(); osc.type = "square"; osc.frequency.value = 440;
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 5.2;
+    const amt = ctx.createGain(); amt.gain.value = 7;
+    lfo.connect(amt); amt.connect(osc.frequency);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.32, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    const flt = ctx.createBiquadFilter(); flt.type = "lowpass"; flt.frequency.value = 2900;
+    osc.connect(flt); flt.connect(g); g.connect(out);
+    osc.start(t); osc.stop(t + dur + 0.05); lfo.start(t); lfo.stop(t + dur + 0.05);
+  }},
+  sawlead: { label: "Saw Lead (Glide)", cat: "Synths", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.5;
+    const osc = ctx.createOscillator(); osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(392, t);
+    osc.frequency.exponentialRampToValueAtTime(523.3, t + 0.09);
+    const g = envGain(ctx, t, 0.38, dur, out);
+    const flt = ctx.createBiquadFilter(); flt.type = "lowpass"; flt.frequency.value = 3400;
+    osc.connect(flt); flt.connect(g); osc.start(t); osc.stop(t + dur + 0.05);
+  }},
+  pwmlead: { label: "PWM Lead", cat: "Synths", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.5;
+    [-16, 16].forEach(d => {
+      const osc = ctx.createOscillator(); osc.type = "square"; osc.frequency.value = 330; osc.detune.value = d;
+      const flt = ctx.createBiquadFilter(); flt.type = "lowpass"; flt.frequency.value = 2300;
+      const g = envGain(ctx, t, 0.2, dur, out);
+      osc.connect(flt); flt.connect(g); osc.start(t); osc.stop(t + dur + 0.05);
+    });
+  }},
+  supersaw: { label: "Supersaw", cat: "Synths", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.48;
+    const g = envGain(ctx, t, 0.34, dur, out);
+    const flt = ctx.createBiquadFilter(); flt.type = "lowpass"; flt.frequency.value = 3600;
+    flt.connect(g);
+    [-16, -8, 0, 8, 16].forEach(d => { const osc = ctx.createOscillator(); osc.type = "sawtooth"; osc.frequency.value = 220; osc.detune.value = d; osc.connect(flt); osc.start(t); osc.stop(t + dur + 0.05); });
+  }},
+  detunedstab: { label: "Minor Stab", cat: "Synths", play(ctx, out, t){
+    _chord(ctx, out, t, { freqs: [196, 233.1, 293.7], type: "sawtooth", dur: 0.27, peak: 0.3, a: 0.006, lp: 2100, detune: 9 });
+  }},
+  arpsynth: { label: "Arp Synth", cat: "Synths", play(ctx, out, t){
+    [440, 554.4, 659.3].forEach((f, i) =>
+      _tone(ctx, out, t + i * 0.072, { type: "square", f0: f, dur: 0.13, peak: 0.28, lp: 2600 }));
+  }},
+  chiptune: { label: "Chiptune Blips", cat: "Synths", play(ctx, out, t){
+    [659.3, 784, 987.8, 784].forEach((f, i) =>
+      _tone(ctx, out, t + i * 0.062, { type: "square", f0: f, dur: 0.075, peak: 0.24 }));
+  }},
+  fmbell: { label: "FM Bell", cat: "Synths", play(ctx, out, t){
+    _fm(ctx, out, t, { freq: 880, ratio: 3.01, index: 2.4, dur: 1.25, peak: 0.32 });
+  }},
+  epiano: { label: "E-Piano", cat: "Synths", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.85;
+    _fm(ctx, out, t, { freq: 261.6, ratio: 1, index: 3.2, dur: dur, peak: 0.42 });
+    _fm(ctx, out, t, { freq: 261.6, ratio: 14.07, index: 0.7, dur: 0.18, peak: 0.1 });
+  }},
+  organ: { label: "Drawbar Organ", cat: "Synths", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.62;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.3, t + 0.015);
+    g.gain.setValueAtTime(0.3, t + Math.max(0.02, dur - 0.08));
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    g.connect(out);
+    [[220, 0.5], [440, 0.32], [660, 0.2], [880, 0.13]].forEach(pair => {
+      const osc = ctx.createOscillator(); osc.type = "sine"; osc.frequency.value = pair[0];
+      const og = ctx.createGain(); og.gain.value = pair[1];
+      osc.connect(og); og.connect(g); osc.start(t); osc.stop(t + dur + 0.05);
+    });
+  }},
+  hoover: { label: "Hoover Synth", cat: "Synths", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.52;
+    const g = envGain(ctx, t, 0.34, dur, out);
+    const flt = ctx.createBiquadFilter(); flt.type = "lowpass"; flt.frequency.value = 1250; flt.Q.value = 3;
+    flt.connect(g);
+    [-11, 0, 11].forEach(d => { const osc = ctx.createOscillator(); osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(110, t); osc.frequency.exponentialRampToValueAtTime(220, t + 0.3);
+      osc.detune.value = d; osc.connect(flt); osc.start(t); osc.stop(t + dur + 0.05); });
+  }},
+  trancelead: { label: "Trance Lead", cat: "Synths", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.5;
+    _tone(ctx, out, t, { type: "sawtooth", f0: 587.3, dur: dur, peak: 0.3, lp: 3800 });
+    _tone(ctx, out, t + 0.09, { type: "sawtooth", f0: 587.3, dur: dur * 0.8, peak: 0.13, lp: 3000 });
+  }},
+  /* ----- Pads & strings ----- */
+  warmpad: { label: "Warm Pad", cat: "Pads", play(ctx, out, t, o){
+    _chord(ctx, out, t, { freqs: [220, 261.6, 329.6], type: "triangle", dur: (o && o.dur) || 1.6, peak: 0.24, a: 0.3, lp: 950 });
+  }},
+  darkpad: { label: "Dark Pad", cat: "Pads", play(ctx, out, t, o){
+    _chord(ctx, out, t, { freqs: [110, 130.8, 164.8], type: "sawtooth", dur: (o && o.dur) || 1.9, peak: 0.2, a: 0.42, lp: 480, detune: 6 });
+  }},
+  strings: { label: "String Ensemble", cat: "Pads", play(ctx, out, t, o){
+    _chord(ctx, out, t, { freqs: [293.7, 370, 440], type: "sawtooth", dur: (o && o.dur) || 1.5, peak: 0.16, a: 0.24, lp: 2600, detune: 10 });
+  }},
+  choirpad: { label: "Choir Pad", cat: "Pads", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 1.7;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.26, t + 0.36);
+    g.gain.setValueAtTime(0.26, t + Math.max(0.4, dur - 0.2));
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    g.connect(out);
+    [196, 246.9].forEach(f => [730, 1090].forEach(ff => {
+      const osc = ctx.createOscillator(); osc.type = "sawtooth"; osc.frequency.value = f;
+      const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = ff; bp.Q.value = 4;
+      const og = ctx.createGain(); og.gain.value = 0.5;
+      osc.connect(bp); bp.connect(og); og.connect(g); osc.start(t); osc.stop(t + dur + 0.05);
+    }));
+  }},
+  shimmerpad: { label: "Shimmer Pad", cat: "Pads", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 1.7;
+    _chord(ctx, out, t, { freqs: [329.6, 493.9, 659.3], type: "triangle", dur: dur, peak: 0.2, a: 0.34, lp: 3300 });
+    _tone(ctx, out, t, { f0: 1318.5, dur: dur, peak: 0.045, a: 0.5 });
+  }},
+  spacepad: { label: "Space Pad", cat: "Pads", play(ctx, out, t, o){
+    _chord(ctx, out, t, { freqs: [164.8, 196, 246.9], type: "sine", dur: (o && o.dur) || 2.1, peak: 0.26, a: 0.5, lp: 720 });
+  }},
+  /* ----- Keys & plucks ----- */
+  musicbox: { label: "Music Box", cat: "Keys", play(ctx, out, t){
+    _fm(ctx, out, t, { freq: 1568, ratio: 3.98, index: 1.1, dur: 0.95, peak: 0.28 });
+    _tone(ctx, out, t, { f0: 3136, dur: 0.3, peak: 0.06 });
+  }},
+  marimba: { label: "Marimba", cat: "Keys", play(ctx, out, t){
+    _tone(ctx, out, t, { f0: 392, dur: 0.32, peak: 0.55 });
+    _tone(ctx, out, t, { f0: 1568, dur: 0.09, peak: 0.14 });
+  }},
+  kalimba: { label: "Kalimba", cat: "Keys", play(ctx, out, t){
+    _tone(ctx, out, t, { type: "triangle", f0: 523.3, dur: 0.38, peak: 0.5, lp: 2400 });
+    _noise(ctx, out, t, { freq: 3400, q: 2, dur: 0.03, peak: 0.15 });
+  }},
+  guitarpluck: { label: "Guitar Pluck", cat: "Keys", play(ctx, out, t){
+    _tone(ctx, out, t, { type: "triangle", f0: 196, dur: 0.52, peak: 0.55, lp: 2400 });
+    _tone(ctx, out, t, { type: "sawtooth", f0: 196, dur: 0.14, peak: 0.16, lp: 1800 });
+    _noise(ctx, out, t, { freq: 1800, dur: 0.025, peak: 0.18 });
+  }},
+  harp: { label: "Harp Gliss", cat: "Keys", play(ctx, out, t){
+    [523.3, 659.3, 784].forEach((f, i) =>
+      _tone(ctx, out, t + i * 0.085, { type: "triangle", f0: f, dur: 0.85, peak: 0.3 }));
+  }},
+  vibraphone: { label: "Vibraphone", cat: "Keys", play(ctx, out, t){
+    _fm(ctx, out, t, { freq: 698.5, ratio: 4, index: 0.75, dur: 1.15, peak: 0.36 });
+  }},
+  toypiano: { label: "Toy Piano", cat: "Keys", play(ctx, out, t){
+    _fm(ctx, out, t, { freq: 1046.5, ratio: 2.04, index: 0.65, dur: 0.42, peak: 0.34 });
+    _noise(ctx, out, t, { type: "highpass", freq: 4000, dur: 0.015, peak: 0.12 });
+  }},
+  /* ----- FX ----- */
+  downlifter: { label: "Downlifter", cat: "FX", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.95;
+    _tone(ctx, out, t, { type: "sawtooth", f0: 820, f1: 58, dur: dur, peak: 0.36, lp: 2200 });
+    _noise(ctx, out, t, { freq: 3600, f1: 220, q: 1.4, dur: dur, peak: 0.3 });
+  }},
+  impact: { label: "Impact Boom", cat: "FX", play(ctx, out, t){
+    _tone(ctx, out, t, { f0: 92, f1: 27, ft: 0.5, dur: 1.15, peak: 1.0 });
+    _noise(ctx, out, t, { type: "highpass", freq: 4800, dur: 0.5, peak: 0.3 });
+  }},
+  siren: { label: "Siren", cat: "FX", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.95;
+    const osc = ctx.createOscillator(); osc.type = "sine";
+    osc.frequency.setValueAtTime(680, t);
+    osc.frequency.linearRampToValueAtTime(1120, t + dur / 2);
+    osc.frequency.linearRampToValueAtTime(680, t + dur);
+    const g = envGain(ctx, t, 0.32, dur, out);
+    osc.connect(g); osc.start(t); osc.stop(t + dur + 0.05);
+  }},
+  vinyl: { label: "Vinyl Crackle", cat: "FX", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 1.0;
+    _noise(ctx, out, t, { type: "lowpass", freq: 1700, dur: dur, peak: 0.1, a: 0.05 });
+    for (let i = 0; i < 6; i++)
+      _noise(ctx, out, t + 0.07 + i * 0.145, { type: "highpass", freq: 2600, dur: 0.012, peak: 0.16 });
+  }},
+  sweep: { label: "Filter Sweep", cat: "FX", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.85;
+    const n = noiseSource(ctx), bp = ctx.createBiquadFilter();
+    bp.type = "bandpass"; bp.Q.value = 6;
+    bp.frequency.setValueAtTime(280, t);
+    bp.frequency.exponentialRampToValueAtTime(5200, t + dur / 2);
+    bp.frequency.exponentialRampToValueAtTime(280, t + dur);
+    const g = envGain(ctx, t, 0.42, dur, out);
+    n.connect(bp); bp.connect(g); n.start(t); n.stop(t + dur + 0.05);
+  }},
+  blip: { label: "Blip", cat: "FX", play(ctx, out, t){
+    _tone(ctx, out, t, { f0: 1180, f1: 1860, ft: 0.06, dur: 0.08, peak: 0.4 });
+  }},
+  coin: { label: "Coin Pickup", cat: "FX", play(ctx, out, t){
+    _tone(ctx, out, t, { type: "square", f0: 987.8, dur: 0.07, peak: 0.26 });
+    _tone(ctx, out, t + 0.07, { type: "square", f0: 1318.5, dur: 0.3, peak: 0.26 });
+  }},
+  alarm: { label: "Alarm Beeps", cat: "FX", play(ctx, out, t){
+    [0, 0.21, 0.42].forEach(off =>
+      _tone(ctx, out, t + off, { type: "square", f0: 880, dur: 0.13, peak: 0.24 }));
+  }},
+  retrophone: { label: "Retro Phone", cat: "FX", play(ctx, out, t){
+    _tone(ctx, out, t, { f0: 440, dur: 0.13, peak: 0.3 });
+    _tone(ctx, out, t + 0.24, { f0: 440, dur: 0.13, peak: 0.3 });
+  }},
+  revcymbal: { label: "Reverse Cymbal", cat: "FX", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.85;
+    const n = noiseSource(ctx), hp = ctx.createBiquadFilter();
+    hp.type = "highpass"; hp.frequency.value = 5900;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.44, t + dur);
+    g.gain.linearRampToValueAtTime(0.0, t + dur + 0.02);
+    n.connect(hp); hp.connect(g); g.connect(out);
+    n.start(t); n.stop(t + dur + 0.05);
+  }},
+  ufo: { label: "UFO Wobble", cat: "FX", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.85;
+    const osc = ctx.createOscillator(); osc.type = "sine";
+    osc.frequency.setValueAtTime(880, t);
+    osc.frequency.exponentialRampToValueAtTime(150, t + dur);
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 8.5;
+    const amt = ctx.createGain(); amt.gain.value = 190;
+    lfo.connect(amt); amt.connect(osc.frequency);
+    const g = envGain(ctx, t, 0.34, dur, out);
+    osc.connect(g); osc.start(t); osc.stop(t + dur + 0.05);
+    lfo.start(t); lfo.stop(t + dur + 0.05);
+  }}
+};
+Object.assign(SOUNDS, NEW_SOUNDS);
+const SOUND_CATEGORIES = ["Drums", "Bass", "Synths", "Pads", "Keys", "FX", "Custom"];
+function soundCategory(name){
+  if (typeof name === "string" && name.indexOf("custom:") === 0) return "Custom";
+  return (SOUNDS[name] && SOUNDS[name].cat) || "Synths";
+}
+
+/* ---------- custom sound import: accept list + IndexedDB store ---------- */
+const CUSTOM_ACCEPT = "audio/*,.mp3,.wav,.wave,.ogg,.oga,.opus,.flac,.m4a,.aac,.aif,.aiff,.webm,.mp4,.3gp,.amr,.awb,.caf,.mid,.midi,.wma";
+const CUSTOM_DB_NAME = "fruitymcloops-db";
+function openCustomDB(){
+  return new Promise((resolve, reject) => {
+    const rq = indexedDB.open(CUSTOM_DB_NAME, 1);
+    rq.onupgradeneeded = () => { rq.result.createObjectStore("customSounds", { keyPath: "id" }); };
+    rq.onsuccess = () => resolve(rq.result);
+    rq.onerror = () => reject(rq.error);
+  });
+}
+function saveCustomSoundRecord(rec){
+  return openCustomDB().then(db => new Promise((resolve, reject) => {
+    const tx = db.transaction("customSounds", "readwrite");
+    tx.objectStore("customSounds").put(rec);
+    tx.oncomplete = () => { db.close(); resolve(true); };
+    tx.onerror = () => reject(tx.error);
+  }));
+}
+function loadCustomSoundRecords(){
+  return openCustomDB().then(db => new Promise((resolve, reject) => {
+    const rq = db.transaction("customSounds", "readonly").objectStore("customSounds").getAll();
+    rq.onsuccess = () => { const v = rq.result || []; db.close(); resolve(v); };
+    rq.onerror = () => reject(rq.error);
+  }));
+}
+function deleteCustomSoundRecord(id){
+  return openCustomDB().then(db => new Promise((resolve, reject) => {
+    const tx = db.transaction("customSounds", "readwrite");
+    tx.objectStore("customSounds").delete(id);
+    tx.oncomplete = () => { db.close(); resolve(true); };
+    tx.onerror = () => reject(tx.error);
+  }));
+}
+
+/* ============================================================
+   DEMO SONGS — complete built-in projects for the Downloads tab.
+   Rows are [sound, four 16-step bars] exactly like PRESETS.
+   ============================================================ */
+const DEMO_SONGS = [
+  { id: "berlin-4am", name: "Berlin 4AM", genre: "Techno", bpm: 132, swing: 0, tracks: [
+    ["deepkick", "x...x...x...x...", "x...x...x...x...", "x...x...x...x...", "x...x...x...x..x"],
+    ["hat",      "..x...x...x...x.", "..x...x...x...x.", "..x...x...x...x.", "..x...x...x...xx"],
+    ["clap",     "....x.......x...", "....x.......x...", "....x.......x...", "....x.......x.x."],
+    ["shaker",   "x.xxx.xxx.xxx.xx", "x.xxx.xxx.xxx.xx", "x.xxx.xxx.xxx.xx", "x.xxx.xxx.xxx.xx"],
+    ["acidbass", "x..x..x...x..x..", "x..x..x...x..x..", "x..x..x...x..x..", "x..x..x...x...x."],
+    ["detunedstab","................", "................", "..x.......x.....", "..x.......x....."]
+  ]},
+  { id: "wobble-town", name: "Wobble Town", genre: "Dubstep", bpm: 140, swing: 10, tracks: [
+    ["kick",   "x.....x.........", "x.....x.........", "x.....x.........", "x.....x....x...."],
+    ["snare2", "....x.......x...", "....x.......x...", "....x.......x...", "....x.......x.xx"],
+    ["wobble", "x.......x.......", "x.......x.......", "x...x.......x...", "x.......x......."],
+    ["growl",  "................", "x.......x.......", "................", "x...x..........."],
+    ["hat",    "x.x.x.x.x.x.x.x.", "x.x.x.x.x.x.x.x.", "x.x.x.x.x.x.x.x.", "x.x.x.x.x.x.xxxx"],
+    ["laser",  "................", "......x.........", "................", "..x............."],
+    ["riser",  "................", "................", "................", "x..............."],
+    ["crash",  "x...............", "................", "x...............", "................"]
+  ]},
+  { id: "sunset-groove", name: "Sunset Groove", genre: "House", bpm: 124, swing: 6, tracks: [
+    ["hardkick",  "x...x...x...x...", "x...x...x...x...", "x...x...x...x...", "x...x...x...x..."],
+    ["clap",      "....x.......x...", "....x.......x...", "....x.......x...", "....x.......x..."],
+    ["openhat",   "..x...x...x...x.", "..x...x...x...x.", "..x...x...x...x.", "..x...x...x...x."],
+    ["tambourine","x.x.x.x.x.x.x.x.", "x.x.x.x.x.x.x.x.", "x.x.x.x.x.x.x.x.", "x.x.x.x.x.x.x.x."],
+    ["pluckbass", "x..x....x..x....", "x..x....x..x....", "x..x....x..x....", "x..x....x..x..x."],
+    ["epiano",    "..x.......x.....", "................", "..x.......x.....", "................"],
+    ["strings",   "x...............", "................", "................", "................"]
+  ]},
+  { id: "boom-bap-breakfast", name: "Boom Bap Breakfast", genre: "Hip-Hop", bpm: 90, swing: 18, tracks: [
+    ["deepkick",  "x......x..x.....", "x......x..x.....", "x......x..x.....", "x......x..x...x."],
+    ["noisesnare","....x.......x...", "....x.......x...", "....x.......x...", "....x.......x..."],
+    ["hat",       "x.x.x.x.x.x.x.x.", "x.x.x.x.x.x.x.x.", "x.x.x.x.x.x.x.x.", "x.x.x.x.x.x.x.x."],
+    ["sinesub2",  "x...............", "................", "x...............", "................"],
+    ["musicbox",  "..x...x.......x.", "..x...x.......x.", "..x...x.......x.", "..x...x........."],
+    ["vinyl",     "x...............", "................", "................", "................"],
+    ["conga",     "......x.......x.", "......x.......x.", "......x.......x.", "......x.......x."]
+  ]},
+  { id: "jungle-juice", name: "Jungle Juice", genre: "Drum & Bass", bpm: 174, swing: 0, tracks: [
+    ["kick2",   "x.........x.....", "x.........x.....", "x.........x.....", "x.........x....."],
+    ["snare2",  "....x.......x...", "....x.......x...", "....x.......x...", "....x.......x..."],
+    ["shaker",  "x.x.x.x.x.x.x.x.", "x.x.x.x.x.x.x.x.", "x.x.x.x.x.x.x.x.", "x.x.x.x.x.x.x.x."],
+    ["reese",   "x.......x.......", "x.......x.......", "x.......x.......", "x.......x......."],
+    ["arpsynth","..x...x...x...x.", "..x...x...x...x.", "..x...x...x...x.", "..x...x...x...x."],
+    ["blip",    "................", "......x.........", "................", "......x........."],
+    ["impact",  "x...............", "................", "................", "................"]
+  ]},
+  { id: "weightless", name: "Weightless", genre: "Ambient", bpm: 80, swing: 0, tracks: [
+    ["warmpad",    "x...............", "................", "................", "................"],
+    ["choirpad",   "................", "................", "x...............", "................"],
+    ["kalimba",    "....x.......x...", "................", "....x.......x...", "................"],
+    ["fmbell",     "..x.............", "................", "..x.............", "................"],
+    ["shimmerpad", "................", "x...............", "................", "................"],
+    ["downlifter", "................", "................", "................", "x..............."]
+  ]}
+];
+function demoToState(demo){
+  if (!demo) return null;
+  return {
+    bpm: clamp(demo.bpm || 120, 60, 200), swing: clamp(demo.swing || 0, 0, 50),
+    fx: Object.assign({}, DEFAULT_FX),
+    tracks: demo.tracks.filter(row => SOUNDS[row[0]]).map(row => ({
+      sound: row[0], steps: pattern(row[1], row[2], row[3], row[4]),
+      volume: 0.9, pan: 0, mute: false, solo: false
+    }))
+  };
+}
+
 const SOUND_NAMES = Object.keys(SOUNDS);
 const MP3_SOUND = "mp3";
 function soundLabel(name){
   if (name === MP3_SOUND) return "MP3 One-Shot";
+  if (typeof name === "string" && name.indexOf("custom:") === 0)
+    return (typeof CUSTOM_NAMES !== "undefined" && CUSTOM_NAMES[name]) || "Custom Sound";
   return SOUNDS[name] ? SOUNDS[name].label : name;
 }
 /* trigger a sequencer sound (synth or the loaded MP3 one-shot) */
@@ -500,6 +1092,13 @@ function triggerSound(ctx, dest, t, name, mp3Buffer, opts){
     const s = ctx.createBufferSource();
     s.buffer = mp3Buffer;
     s.connect(dest); s.start(t);
+    return true;
+  }
+  if (typeof name === "string" && name.indexOf("custom:") === 0){
+    const b = (typeof CUSTOM_BUFFERS !== "undefined") ? CUSTOM_BUFFERS[name] : null;
+    if (!b) return false;
+    const cs = ctx.createBufferSource();
+    cs.buffer = b; cs.connect(dest); cs.start(t);
     return true;
   }
   const snd = SOUNDS[name];
@@ -560,7 +1159,7 @@ function defaultTracks(){
 }
 function serializeProject(state){
   return JSON.stringify({
-    app: "FruityMcLoops", version: 1,
+    app: "FruityMcLoops", version: 2,
     bpm: state.bpm, swing: state.swing,
     fx: Object.assign({}, state.fx),
     tracks: state.tracks.map(t => ({
@@ -578,7 +1177,7 @@ function parseProject(json){
     swing: clamp(+o.swing || 0, 0, 50),
     fx: fx,
     tracks: o.tracks.map(t => ({
-      sound: (t.sound === MP3_SOUND || SOUNDS[t.sound]) ? t.sound : "kick",
+      sound: (t.sound === MP3_SOUND || SOUNDS[t.sound] || (typeof t.sound === "string" && t.sound.indexOf("custom:") === 0)) ? t.sound : "kick",
       steps: stringToSteps(t.steps, 64),
       volume: clamp(t.volume == null ? 0.9 : +t.volume, 0, 1),
       pan: clamp(t.pan == null ? 0 : +t.pan, -1, 1),
@@ -622,6 +1221,9 @@ function encodeWAV(buffer){
 if (typeof module !== "undefined" && module.exports){
   module.exports = { clamp, fmtTime, stepsToString, stringToSteps, pattern,
     makeDistortionCurve, makeCrushCurve, SOUNDS, SOUND_NAMES, MP3_SOUND,
+    NEW_SOUNDS, SOUND_CATEGORIES, soundCategory, CUSTOM_ACCEPT, CUSTOM_DB_NAME,
+    openCustomDB, saveCustomSoundRecord, loadCustomSoundRecords, deleteCustomSoundRecord,
+    DEMO_SONGS, demoToState,
     triggerSound, PRESETS, presetToTracks, DEFAULT_FX, defaultTracks,
     serializeProject, parseProject, encodeWAV };
 }
@@ -883,12 +1485,18 @@ const drawQueue = [];
 const seq = { playing:false, step:0, nextTime:0, timer:null };
 let prevStep = -1;
 function stepDur(){ return 60 / bpm / 4; }
+const LONG_FX = ["riser","downlifter","impact","sweep","vinyl","revcymbal","ufo","siren"];
 function soundOpts(tr, step, sd){
   const o = {};
   if (tr.sound === "wobble"){ o.rate = [6, 6, 12, 3][Math.floor(step / 16) % 4]; o.dur = sd * 3.8; }
+  if (tr.sound === "growl"){ o.rate = [11, 11, 14, 7][Math.floor(step / 16) % 4]; o.dur = sd * 3.4; }
   if (tr.sound === "sub") o.dur = sd * 0.95;
   if (tr.sound === "riser") o.dur = sd * 15;
-  if (tr.sound === "tom") o.pitch = [1, 0.84, 1.19, 0.75][Math.floor(step / 16) % 4];
+  if (LONG_FX.indexOf(tr.sound) >= 0) o.dur = sd * 7;
+  if (tr.sound === "tom" || tr.sound === "electrotom") o.pitch = [1, 0.84, 1.19, 0.75][Math.floor(step / 16) % 4];
+  const cat = soundCategory(tr.sound);
+  if (cat === "Pads") o.dur = sd * 3.8;
+  else if ((cat === "Bass" || cat === "Synths" || cat === "Keys") && o.dur == null) o.dur = sd * 0.95;
   return o;
 }
 function trackAudible(tr){
@@ -963,9 +1571,19 @@ function highlightStep(s){
 /* ---------------- sequencer DOM ---------------- */
 function soundOptionsHTML(selected){
   let h = "";
-  SOUND_NAMES.forEach(n => {
-    h += '<option value="' + n + '"' + (n === selected ? " selected" : "") + ">" + SOUNDS[n].label + "</option>";
+  const byCat = {};
+  SOUND_NAMES.forEach(n => { const c = soundCategory(n); (byCat[c] = byCat[c] || []).push(n); });
+  Object.keys(byCat).sort().forEach(c => {
+    h += '<optgroup label="' + c + '">';
+    byCat[c].forEach(n => { h += '<option value="' + n + '"' + (n === selected ? " selected" : "") + ">" + SOUNDS[n].label + "</option>"; });
+    h += "</optgroup>";
   });
+  const cids = (typeof CUSTOM_BUFFERS !== "undefined") ? Object.keys(CUSTOM_BUFFERS) : [];
+  if (cids.length){
+    h += '<optgroup label="Custom / My Sounds">';
+    cids.forEach(id => { h += '<option value="' + id + '"' + (id === selected ? " selected" : "") + ">🎧 " + (CUSTOM_NAMES[id] || "Custom Sound") + "</option>"; });
+    h += "</optgroup>";
+  }
   h += '<option value="' + MP3_SOUND + '"' + (selected === MP3_SOUND ? " selected" : "") + ">MP3 One-Shot</option>";
   return h;
 }
@@ -1152,6 +1770,189 @@ async function exportWav(){
   } catch(e){ status("⚠ WAV render failed."); }
 }
 
+
+/* ============================================================
+   v2 — Sound Library browser, My Sounds (custom import), Downloads.
+   ============================================================ */
+const CUSTOM_BUFFERS = {};   /* id ("custom:...") -> AudioBuffer */
+const CUSTOM_NAMES = {};     /* id -> display name */
+function previewSound(name){
+  ensureCtx();
+  triggerSound(ctx, N.seqBus, ctx.currentTime + 0.02, name, mp3.buffer,
+    { dur: 0.6, rate: 8, pitch: 1, freq: 520 });
+}
+function renderLibrary(){
+  const grid = $("libGrid"); if (!grid) return;
+  const cat = $("libCatFilter").value || "All";
+  grid.innerHTML = "";
+  let count = 0;
+  SOUND_NAMES.forEach(n => {
+    if (cat !== "All" && soundCategory(n) !== cat) return;
+    count++;
+    const b = document.createElement("button");
+    b.className = "libbtn";
+    b.innerHTML = SOUNDS[n].label + "<small>" + soundCategory(n) + "</small>";
+    b.addEventListener("click", () => previewSound(n));
+    grid.appendChild(b);
+  });
+  Object.keys(CUSTOM_BUFFERS).forEach(id => {
+    if (cat !== "All" && cat !== "Custom") return;
+    count++;
+    const b = document.createElement("button");
+    b.className = "libbtn";
+    b.innerHTML = "🎧 " + (CUSTOM_NAMES[id] || id) + "<small>Custom / My Sounds</small>";
+    b.addEventListener("click", () => previewSound(id));
+    grid.appendChild(b);
+  });
+  if (cat === "All" || cat === "Custom"){
+    count++;
+    const b = document.createElement("button");
+    b.className = "libbtn";
+    b.innerHTML = "MP3 One-Shot<small>Your loaded MP3</small>";
+    b.addEventListener("click", () => previewSound(MP3_SOUND));
+    grid.appendChild(b);
+  }
+  $("libCount").textContent = count + " sounds — tap to preview";
+}
+function renderCustomList(){
+  const wrap = $("customList"); if (!wrap) return;
+  wrap.innerHTML = "";
+  const ids = Object.keys(CUSTOM_BUFFERS);
+  if (!ids.length){
+    wrap.innerHTML = '<div class="note">No custom sounds yet. Import a whole folder of samples and they will live here — even after you close the app.</div>';
+    return;
+  }
+  ids.forEach(id => {
+    const row = document.createElement("div"); row.className = "custRow";
+    const nm = document.createElement("span"); nm.className = "custName";
+    nm.textContent = "🎧 " + (CUSTOM_NAMES[id] || id);
+    const mk = (label, fn) => { const b = document.createElement("button"); b.className = "small"; b.textContent = label; b.addEventListener("click", fn); return b; };
+    row.appendChild(nm);
+    row.appendChild(mk("▶ Preview", () => previewSound(id)));
+    row.appendChild(mk("✏ Rename", async () => {
+      const nn = prompt("Rename this sound:", CUSTOM_NAMES[id] || "");
+      if (!nn) return;
+      CUSTOM_NAMES[id] = nn;
+      try { await saveCustomSoundRecord({ id: id, name: nn, buffer: CUSTOM_RAW[id], mime: "" }); } catch(e){}
+      renderCustomList(); renderLibrary(); renderTracks();
+    }));
+    row.appendChild(mk("🗑 Delete", async () => {
+      delete CUSTOM_BUFFERS[id]; delete CUSTOM_NAMES[id]; delete CUSTOM_RAW[id];
+      try { await deleteCustomSoundRecord(id); } catch(e){}
+      tracks.forEach(tr => { if (tr.sound === id) tr.sound = "kick"; });
+      renderCustomList(); renderLibrary(); renderTracks(); autosave();
+      status("Custom sound deleted.");
+    }));
+    wrap.appendChild(row);
+  });
+}
+const CUSTOM_RAW = {};       /* id -> raw ArrayBuffer (for rename re-save) */
+async function handleCustomFiles(fileList){
+  ensureCtx();
+  const files = Array.from(fileList || []);
+  if (!files.length) return;
+  let ok = 0; const failed = [], skipped = [];
+  for (const f of files){
+    const lower = (f.name || "").toLowerCase();
+    if (lower.endsWith(".mid") || lower.endsWith(".midi")){
+      skipped.push(f.name + " — MIDI is a note file, not an audio sample (export it to WAV/MP3 first)");
+      continue;
+    }
+    try {
+      const raw = await f.arrayBuffer();
+      const buf = await ctx.decodeAudioData(raw.slice(0));
+      const id = "custom:" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7) + ok;
+      const name = f.name.replace(/\.[^.]+$/, "");
+      CUSTOM_BUFFERS[id] = buf; CUSTOM_NAMES[id] = name; CUSTOM_RAW[id] = raw;
+      try { await saveCustomSoundRecord({ id: id, name: name, buffer: raw, mime: f.type || "" }); } catch(e){}
+      ok++;
+    } catch(e){ failed.push(f.name); }
+  }
+  renderCustomList(); renderLibrary(); renderTracks();
+  let msg = "Imported " + ok + " custom sound(s) into My Sounds.";
+  if (skipped.length) msg += " Skipped: " + skipped.join("; ") + ".";
+  if (failed.length) msg += " ⚠ Could not decode (codec not supported on this device): " + failed.join(", ");
+  $("customStatus").textContent = msg;
+  status(msg);
+}
+async function loadCustomSounds(){
+  if (!("indexedDB" in window)) return;
+  try {
+    const recs = await loadCustomSoundRecords();
+    if (!recs || !recs.length) return;
+    ensureCtx();
+    for (const r of recs){
+      try {
+        const buf = await ctx.decodeAudioData(r.buffer.slice(0));
+        CUSTOM_BUFFERS[r.id] = buf; CUSTOM_NAMES[r.id] = r.name; CUSTOM_RAW[r.id] = r.buffer;
+      } catch(e){ /* undecodable on this device — skip, keep the record */ }
+    }
+    renderCustomList(); renderLibrary(); renderTracks();
+  } catch(e){}
+}
+function demoState(d){ return demoToState(d); }
+async function downloadDemoWav(d){
+  ensureCtx();
+  const prev = serializeProject(currentState());
+  const prevBars = $("wavBars").value;
+  applyState(demoState(d));
+  $("wavBars").value = "4";
+  status("Rendering " + d.name + " as WAV …");
+  await exportWav();
+  $("wavBars").value = prevBars;
+  applyState(parseProject(prev));
+  status(d.name + " WAV downloaded — your own project was restored.");
+}
+function renderDownloads(){
+  const wrap = $("demoList"); if (!wrap) return;
+  wrap.innerHTML = "";
+  DEMO_SONGS.forEach(d => {
+    const card = document.createElement("div"); card.className = "demoCard";
+    const head = document.createElement("div");
+    head.innerHTML = "<b>" + d.name + "</b> <span class='demoMeta'>" + d.genre + " • " + d.bpm + " BPM • " + d.tracks.length + " tracks</span>";
+    card.appendChild(head);
+    const row = document.createElement("div"); row.className = "rowflex"; row.style.marginTop = "6px";
+    const mk = (label, fn, hot) => { const b = document.createElement("button"); b.className = "small"; b.textContent = label; if (hot){ b.style.background = "var(--green)"; b.style.color = "#04150a"; } b.addEventListener("click", fn); return b; };
+    row.appendChild(mk("▶ LOAD INTO SEQUENCER", () => {
+      stopSeq();
+      applyState(demoState(d)); autosave();
+      status("Demo loaded: " + d.name + " (" + d.genre + ") — hit sequencer PLAY!");
+    }, true));
+    row.appendChild(mk("🎵 DOWNLOAD WAV", () => downloadDemoWav(d)));
+    row.appendChild(mk("⬇ DOWNLOAD .JSON", () => {
+      download(d.id + ".fruity.json", new Blob([serializeProject(demoState(d))], { type: "application/json" }));
+      status(d.name + " project file downloaded.");
+    }));
+    card.appendChild(row);
+    wrap.appendChild(card);
+  });
+}
+function wireExtras(){
+  /* library */
+  const sel = $("libCatFilter");
+  sel.innerHTML = "";
+  ["All"].concat(SOUND_CATEGORIES).forEach(c => {
+    const o = document.createElement("option"); o.value = c === "Custom" ? "Custom" : c;
+    o.textContent = c === "Custom" ? "Custom / My Sounds" : c;
+    sel.appendChild(o);
+  });
+  sel.addEventListener("change", renderLibrary);
+  renderLibrary();
+  /* my sounds */
+  $("importSoundsBtn").addEventListener("click", () => $("customFile").click());
+  $("customFile").addEventListener("change", e => { handleCustomFiles(e.target.files); e.target.value = ""; });
+  const dz = $("customDrop");
+  ["dragover", "dragenter"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add("drag"); }));
+  ["dragleave", "drop"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove("drag"); }));
+  dz.addEventListener("drop", e => handleCustomFiles(e.dataTransfer.files));
+  renderCustomList();
+  loadCustomSounds();
+  /* downloads */
+  renderDownloads();
+  $("ownSaveBtn").addEventListener("click", () => $("saveProjBtn").click());
+  $("ownWavBtn").addEventListener("click", () => $("exportWavBtn").click());
+}
+
 /* ---------------- wiring ---------------- */
 function wire(){
   $("startBtn").addEventListener("click", () => {
@@ -1240,6 +2041,7 @@ function wire(){
     });
   });
   $("exportWavBtn").addEventListener("click", exportWav);
+  wireExtras();
 }
 
 /* ---------------- init ---------------- */

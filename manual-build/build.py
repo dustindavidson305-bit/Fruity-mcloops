@@ -11,18 +11,30 @@ broken in this sandbox).
 import os, subprocess, sys, shutil, zipfile
 
 HOME = os.path.expanduser("~")
-APP_ROOT = f"{HOME}/workspace/apps/fruity-mcloops"
+# Repo root = parent of this script's manual-build/ directory, so the
+# build works wherever the repo is cloned out.
+APP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ANDROID = f"{APP_ROOT}/manual-build/android"
-SDK = f"{HOME}/android-sdk"
+SDK = (os.environ.get("ANDROID_SDK_ROOT") or os.environ.get("ANDROID_HOME")
+       or f"{HOME}/android-sdk")
 BT = f"{SDK}/build-tools/35.0.0"
 ANDROID_JAR = f"{SDK}/platforms/android-35/android.jar"
 BUILD = f"{APP_ROOT}/manual-build"
 APP_ID = "com.delukz.fruitymcloops"
 MIN_SDK = "24"
 TARGET_SDK = "35"
+VERSION_CODE = "2"
+VERSION_NAME = "2.0"
 
 ENV = dict(os.environ)
-for jdk in (f"{HOME}/jdk21", f"{HOME}/jdk17"):
+_jdk_candidates = []
+if os.environ.get("JAVA_HOME"):
+    _jdk_candidates.append(os.environ["JAVA_HOME"])
+_jdk_candidates += [f"{HOME}/jdk21", f"{HOME}/jdk17"]
+_sys_javac = shutil.which("javac")
+if _sys_javac:
+    _jdk_candidates.append(os.path.dirname(os.path.dirname(os.path.realpath(_sys_javac))))
+for jdk in _jdk_candidates:
     if os.path.exists(f"{jdk}/bin/javac"):
         ENV["JAVA_HOME"] = jdk
         ENV["PATH"] = f"{jdk}/bin:" + ENV["PATH"]
@@ -60,7 +72,7 @@ def aapt2():
          "-I", ANDROID_JAR,
          "--manifest", f"{ANDROID}/app/src/main/AndroidManifest.xml",
          "--min-sdk-version", MIN_SDK, "--target-sdk-version", TARGET_SDK,
-         "--version-code", "1", "--version-name", "1.0",
+         "--version-code", VERSION_CODE, "--version-name", VERSION_NAME,
          "--java", gen, "--auto-add-overlay",
          "--output-text-symbols", f"{BUILD}/R.txt",
          "-A", stage_assets(),
