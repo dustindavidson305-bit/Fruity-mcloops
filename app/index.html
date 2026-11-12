@@ -150,6 +150,58 @@ input[type=text].urlin{flex:1 1 200px;font-weight:400;}
 .pblack.isRoot{background:var(--orange);}
 select.labSel{max-width:170px;}
 #xfader{accent-color:var(--magenta);}
+
+/* ---------- v2.2: polish, folders, mixer ---------- */
+html{scroll-behavior:smooth;}
+body{padding-top:8px;}
+button{transition:background .15s ease, transform .08s ease, box-shadow .15s ease;}
+button:hover{box-shadow:0 0 10px rgba(34,211,238,.25);}
+button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible{
+  outline:2px solid var(--cyan); outline-offset:2px;}
+.panel{animation:fadeUp .25s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+#jumpNav{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px;}
+#jumpNav a{color:var(--txt);text-decoration:none;background:var(--panel2);
+  border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;}
+#jumpNav a:active{transform:scale(.96);}
+#statusBar{position:sticky;top:6px;z-index:60;display:flex;gap:8px;align-items:center;
+  background:rgba(18,18,31,.96);border:1px solid var(--line);border-radius:10px;
+  padding:6px 10px;margin-bottom:12px;box-shadow:0 4px 18px rgba(0,0,0,.45);}
+#statusBar #statusLine{margin-top:0;flex:1;}
+.panel > h2.foldable{cursor:pointer;user-select:none;-webkit-user-select:none;}
+.panel > h2.foldable::after{content:"▾";float:right;color:var(--dim);}
+.panel.closed > h2.foldable::after{content:"▸";}
+.panel.closed{padding-bottom:6px;}
+.panel.closed .panelBody{display:none;}
+.deckCard > h3{cursor:pointer;user-select:none;-webkit-user-select:none;}
+.deckCard > h3::after{content:"▾";float:right;color:var(--dim);margin-left:8px;}
+.deckCard.closed > h3::after{content:"▸";}
+.deckCard.closed .deckBody{display:none;}
+details.barTools{margin-top:10px;border:1px dashed var(--line);border-radius:10px;padding:8px 10px;}
+details.barTools summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--cyan);}
+details.chanStrip{border:1px solid var(--line);border-radius:12px;margin-bottom:8px;
+  background:var(--panel2);overflow:hidden;}
+details.chanStrip summary{cursor:pointer;padding:10px 12px;font-weight:700;font-size:14px;
+  list-style:none;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+details.chanStrip summary::-webkit-details-marker{display:none;}
+details.chanStrip summary .chanMeta{color:var(--dim);font-weight:400;font-size:12px;}
+details.chanStrip summary .dotM, details.chanStrip summary .dotS{
+  font-size:10px;border-radius:6px;padding:2px 6px;border:1px solid var(--line);}
+details.chanStrip summary .dotM.on{background:var(--red);color:#fff;border-color:var(--red);}
+details.chanStrip summary .dotS.on{background:var(--cyan);color:#02141a;border-color:var(--cyan);}
+details.chanStrip .chanBody{padding:4px 12px 12px;border-top:1px solid var(--line);}
+.chanGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:4px 14px;}
+#seqScroll{scrollbar-width:thin;scrollbar-color:#33335a transparent;}
+#seqScroll::-webkit-scrollbar{height:8px;}
+#seqScroll::-webkit-scrollbar-thumb{background:#33335a;border-radius:4px;}
+.cell{transition:background .1s ease, box-shadow .1s ease;}
+.cell:hover{border-color:var(--cyan);}
+.cell.outLoop, .rcell.outLoop{opacity:.32;}
+.cell.outLoop{border-style:dashed;}
+.thead .tbtns button.chOn{background:var(--orange);color:#160a00;border-color:var(--orange);}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto;} .panel{animation:none;} button{transition:none;}
+}
 </style>
 </head>
 <body>
@@ -163,10 +215,17 @@ select.labSel{max-width:170px;}
 </div>
 
 <h1>🍊 <span class="fm1">FRUITY</span> <span class="fm2">McLOOPS</span></h1>
-<div class="tagline">4-deck DJ workstation • scratch • step sequencer • dubstep machine • v2.1</div>
+<div class="tagline">4-deck DJ workstation • scratch • step sequencer • mixer • dubstep machine • v2.2</div>
+<nav id="jumpNav">
+  <a href="#deckPanel">🎧 Decks</a><a href="#fxPanel">🎛️ FX Rack</a><a href="#libPanel">🎹 Library</a>
+  <a href="#mySoundsPanel">🎧 My Sounds</a><a href="#labPanel">🎚️ Track Lab</a>
+  <a href="#mixerPanel">🎛️ Mixer</a><a href="#seqPanel">🥁 Sequencer</a>
+  <a href="#savePanel">💾 Save</a><a href="#dlPanel">⬇ Downloads</a>
+</nav>
+<div id="statusBar"><span>🍊</span><div id="statusLine"></div></div>
 
 <!-- ================= 4-DECK DJ SYSTEM ================= -->
-<div class="panel" id="deckPanel">
+<div class="panel" id="deckPanel" data-fold="open">
   <h2>🎧 Decks A–D — DJ Workstation</h2>
   <div class="rowflex">
     <button id="playAllBtn" style="background:var(--green);color:#04150a;border-color:var(--green);">▶▶ PLAY ALL</button>
@@ -189,7 +248,7 @@ select.labSel{max-width:170px;}
 </div>
 
 <!-- ================= FX RACK ================= -->
-<div class="panel">
+<div class="panel" id="fxPanel" data-fold="open">
   <h2>🎛️ Master FX Rack (all decks + MP3 one-shot)</h2>
   <button id="killBtn">💀 KILL SWITCH</button>
   <div class="grid2" style="margin-top:10px;">
@@ -211,7 +270,14 @@ select.labSel{max-width:170px;}
       <input type="range" id="fxDelayMix" min="0" max="80" value="0"></div>
     <div class="ctl"><label class="lbl">Reverb mix <span class="val" id="fxReverbVal">0%</span></label>
       <input type="range" id="fxReverb" min="0" max="90" value="0"></div>
+    <div class="ctl"><label class="lbl">Deck bus volume <span class="val" id="deckVolVal">90%</span></label>
+      <input type="range" id="deckVol" min="0" max="120" value="90"></div>
+    <div class="ctl"><label class="lbl">Trance gate — decks (v2.2) <span class="val" id="fxGateVal">off</span></label>
+      <input type="range" id="fxGate" min="0" max="100" value="0"></div>
+    <div class="ctl"><label class="lbl">Phaser — decks (v2.2) <span class="val" id="fxPhaserVal">off</span></label>
+      <input type="range" id="fxPhaser" min="0" max="90" value="0"></div>
   </div>
+  <div class="note" style="margin-top:4px;">Gate chops the deck bus in 1/8-note steps at the sequencer BPM; phaser sweeps a classic 4-stage whoosh. Both are new in v2.2 and save with your project.</div>
   <h2 style="margin-top:12px;">⚙ DJ Settings</h2>
   <div class="rowflex">
     <label class="lbl" style="margin:0;">Crossfader curve
@@ -243,7 +309,7 @@ select.labSel{max-width:170px;}
 
 
 <!-- ================= SOUND LIBRARY ================= -->
-<div class="panel">
+<div class="panel" id="libPanel" data-fold="closed">
   <h2>🎹 Sound Library</h2>
   <div class="rowflex">
     <label class="lbl" style="margin:0;">Category
@@ -256,7 +322,7 @@ select.labSel{max-width:170px;}
 </div>
 
 <!-- ================= MY SOUNDS (CUSTOM IMPORT) ================= -->
-<div class="panel">
+<div class="panel" id="mySoundsPanel" data-fold="closed">
   <h2>🎧 My Sounds — Custom Sound Slot</h2>
   <div id="customDrop">
     <div style="font-weight:700;color:var(--txt);">Drop your own sound files here</div>
@@ -287,7 +353,7 @@ select.labSel{max-width:170px;}
 </div>
 
 <!-- ================= TRACK LAB: PITCH / SCALE / MORPH / TONE ================= -->
-<div class="panel">
+<div class="panel" id="labPanel" data-fold="closed">
   <h2>🎚️ Track Lab — Pitch &amp; Scale, Morph &amp; Tone</h2>
   <div class="rowflex">
     <label class="lbl" style="margin:0;">Track
@@ -340,14 +406,63 @@ select.labSel{max-width:170px;}
   </div>
 </div>
 
+<!-- ================= MIXER / CHANNEL STRIPS (v2.2) ================= -->
+<div class="panel" id="mixerPanel" data-fold="open">
+  <h2>🎛️ Mixer — Channel Strips (every sound, every effect)</h2>
+  <div class="note">One strip per sequencer track. Open a strip to shape that sound on its own channel:
+  volume, pan, transpose, 3-band EQ, tone filter + drive, attack/decay, morph, and its own
+  <b>delay &amp; reverb sends</b>. Everything is live while the sequencer plays and saves into your
+  project file. The <b>CH</b> button on a track row jumps straight to its strip.</div>
+  <div class="rowflex" style="margin:10px 0;">
+    <label class="lbl" style="margin:0;flex:1 1 200px;">⏱ Delay return (all channels)
+      <span class="val" id="mixDelayRetVal">90%</span>
+      <input type="range" id="mixDelayRet" min="0" max="120" value="90"></label>
+    <label class="lbl" style="margin:0;flex:1 1 200px;">🌊 Reverb return (all channels)
+      <span class="val" id="mixReverbRetVal">90%</span>
+      <input type="range" id="mixReverbRet" min="0" max="120" value="90"></label>
+  </div>
+  <div id="mixerStrips"></div>
+</div>
+
 <!-- ================= SEQUENCER ================= -->
-<div class="panel">
-  <h2>🥁 Step Sequencer — 64 steps, unlimited tracks</h2>
+<div class="panel" id="seqPanel" data-fold="open">
+  <h2>🥁 Step Sequencer — up to 8 bars, unlimited tracks</h2>
   <div class="rowflex">
     <button id="seqPlayBtn" style="font-size:16px;padding:12px 18px;">▶ PLAY</button>
     <button id="seqStopBtn" style="font-size:16px;padding:12px 18px;">⏹ STOP</button>
     <span id="barLabel">BAR 1/4</span>
   </div>
+  <div class="rowflex" style="margin-top:10px;">
+    <label class="lbl" style="margin:0;">🔁 Loop length
+      <select id="loopBarsSel">
+        <option value="1">1 bar</option>
+        <option value="2">2 bars</option>
+        <option value="3">3 bars</option>
+        <option value="4" selected>4 bars</option>
+        <option value="6">6 bars</option>
+        <option value="8">8 bars</option>
+      </select></label>
+    <span id="loopInfo" class="tabnote">Loop: 4 bars • 64 steps</span>
+    <span class="note">The grid holds 8 bars (128 steps). Steps past the loop end stay saved, just dimmed — stretch the loop any time and they're still there.</span>
+  </div>
+  <details class="barTools">
+    <summary>🧰 Bar tools — copy, fill &amp; clear bars (all tracks at once)</summary>
+    <div class="rowflex" style="margin-top:8px;">
+      <label class="lbl" style="margin:0;">Copy bar
+        <select id="barFrom"></select></label>
+      <span class="note">→</span>
+      <label class="lbl" style="margin:0;">into bar
+        <select id="barTo"></select></label>
+      <button id="copyBarBtn" class="small">📋 COPY BAR</button>
+    </div>
+    <div class="rowflex" style="margin-top:6px;">
+      <button id="fillLoopBtn" class="small">🔁 FILL THE WHOLE LOOP FROM BAR 1</button>
+      <label class="lbl" style="margin:0;">Clear bar
+        <select id="barClearSel"></select></label>
+      <button id="clearBarBtn" class="small">🧹 CLEAR BAR</button>
+    </div>
+    <div class="note" style="margin-top:6px;">Fastest way to an 8-bar loop: write bar 1, set the loop to 8 bars, hit FILL, then tweak the later bars so it doesn't just repeat.</div>
+  </details>
   <div class="grid2" style="margin-top:8px;">
     <div class="ctl"><label class="lbl">Tempo BPM <span class="val" id="bpmVal">132</span></label>
       <input type="range" id="bpm" min="60" max="200" value="132"></div>
@@ -367,7 +482,7 @@ select.labSel{max-width:170px;}
 </div>
 
 <!-- ================= SAVE / EXPORT ================= -->
-<div class="panel">
+<div class="panel" id="savePanel" data-fold="closed">
   <h2>💾 Save &amp; Export</h2>
   <div class="rowflex">
     <button id="saveProjBtn">⬇ SAVE PROJECT (.json)</button>
@@ -387,13 +502,12 @@ select.labSel{max-width:170px;}
     Reload your MP3 after loading a project if a track uses the MP3 one-shot.
     Your work also auto-saves in the app as you go.
   </div>
-  <div id="statusLine"></div>
 </div>
 
-<div class="note" style="text-align:center;">Fruity McLoops v2.1 — 75 built-in sounds synthesized live, 4 DJ decks with stems, plus your own custom sounds. No samples were harmed. 🍊</div>
+<div class="note" style="text-align:center;">Fruity McLoops v2.2 — 105 built-in sounds synthesized live, 1–8 bar loops, a channel strip for every sound, 4 DJ decks with stems, plus your own custom sounds. No samples were harmed. 🍊</div>
 
 <!-- ================= DOWNLOADS ================= -->
-<div class="panel">
+<div class="panel" id="dlPanel" data-fold="closed">
   <h2>⬇ Downloads — Songs</h2>
   <div class="note">Built-in demo songs, ready to grab. <b>Load</b> one into the sequencer to remix it,
   download it as a finished <b>WAV</b>, or take the <b>.json project</b> to reopen any time.
@@ -437,7 +551,7 @@ function stepsToString(steps){
   return out;
 }
 function stringToSteps(str, len){
-  len = len || 64;
+  len = len || MAX_STEPS;
   const out = new Array(len).fill(false);
   if (typeof str === "string"){
     for (let i = 0; i < Math.min(len, str.length); i++)
@@ -447,11 +561,11 @@ function stringToSteps(str, len){
   }
   return out;
 }
-function pattern(){ /* build a 64-step array from four 16-char bar strings */
+function pattern(){ /* build a step array from up to eight 16-char bar strings */
   let s = "";
   for (let i = 0; i < arguments.length; i++) s += arguments[i];
-  while (s.length < 64) s += "................";
-  return stringToSteps(s.slice(0, 64), 64);
+  while (s.length < MAX_STEPS) s += "................";
+  return stringToSteps(s.slice(0, MAX_STEPS), MAX_STEPS);
 }
 
 /* ---------- audio curve helpers ---------- */
@@ -1092,6 +1206,196 @@ const NEW_SOUNDS = {
   }}
 };
 Object.assign(SOUNDS, NEW_SOUNDS);
+
+/* ============================================================
+   v2.2 EXPANSION — 30 more synthesized sounds (zero samples).
+   ============================================================ */
+const NEW_SOUNDS_V22 = {
+  /* ----- Drums ----- */
+  trapkick: { label: "Trap Kick", cat: "Drums", play(ctx, out, t){
+    _tone(ctx, out, t, { f0: 150, f1: 38, ft: 0.16, dur: 0.55, peak: 1.0 });
+    _noise(ctx, out, t, { type: "highpass", freq: 5000, dur: 0.015, peak: 0.2 });
+  }},
+  lofikick: { label: "Lo-Fi Kick", cat: "Drums", play(ctx, out, t){
+    _tone(ctx, out, t, { f0: 120, f1: 45, ft: 0.1, dur: 0.3, peak: 0.9, lp: 900 });
+    _noise(ctx, out, t, { type: "lowpass", freq: 2400, dur: 0.05, peak: 0.12 });
+  }},
+  brushsnare: { label: "Brush Snare", cat: "Drums", play(ctx, out, t){
+    _noise(ctx, out, t, { freq: 3200, f1: 1400, q: 0.6, dur: 0.34, peak: 0.5, a: 0.05 });
+    _tone(ctx, out, t, { type: "triangle", f0: 210, dur: 0.06, peak: 0.2 });
+  }},
+  clapstack: { label: "Clap Stack", cat: "Drums", play(ctx, out, t){
+    [0, 0.03, 0.07, 0.12].forEach((off, i) =>
+      _noise(ctx, out, t + off, { freq: 1300, q: 1.8, dur: i === 3 ? 0.3 : 0.07, peak: 0.5 }));
+  }},
+  rimclick: { label: "Rim Click", cat: "Drums", play(ctx, out, t){
+    _tone(ctx, out, t, { type: "square", f0: 2400, dur: 0.03, peak: 0.35 });
+    _tone(ctx, out, t, { type: "square", f0: 1750, dur: 0.045, peak: 0.25 });
+  }},
+  china: { label: "China Crash", cat: "Drums", play(ctx, out, t){
+    _noise(ctx, out, t, { type: "highpass", freq: 4200, dur: 0.9, peak: 0.5 });
+    _tone(ctx, out, t, { type: "square", f0: 620, dur: 0.4, peak: 0.06 });
+    _tone(ctx, out, t, { type: "square", f0: 935, dur: 0.3, peak: 0.05 });
+  }},
+  /* ----- Bass ----- */
+  neurobass: { label: "Neuro Bass", cat: "Bass", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.5, m = _pf(o);
+    const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.Q.value = 12;
+    f.frequency.setValueAtTime(240, t);
+    f.frequency.exponentialRampToValueAtTime(2600, t + dur * 0.4);
+    f.frequency.exponentialRampToValueAtTime(300, t + dur);
+    const g = envGain(ctx, t, 0.55, dur, out);
+    f.connect(g);
+    [55 * m, 55.8 * m, 110 * m].forEach(fr => {
+      const osc = ctx.createOscillator(); osc.type = "sawtooth"; osc.frequency.value = fr;
+      osc.connect(f); osc.start(t); osc.stop(t + dur + 0.05);
+    });
+  }},
+  donkbass: { label: "Donk Bass", cat: "Bass", play(ctx, out, t, o){
+    _fm(ctx, out, t, { freq: (o && o.freq) || 98, ratio: 3.01, index: 6, dur: 0.32, peak: 0.6 });
+  }},
+  bouncebass: { label: "Bounce Bass", cat: "Bass", play(ctx, out, t, o){
+    const m = _pf(o);
+    const osc = ctx.createOscillator(), g = envGain(ctx, t, 0.7, 0.3, out);
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(60 * m, t);
+    osc.frequency.exponentialRampToValueAtTime(160 * m, t + 0.06);
+    osc.frequency.exponentialRampToValueAtTime(72 * m, t + 0.28);
+    osc.connect(g); osc.start(t); osc.stop(t + 0.34);
+  }},
+  vintagebass: { label: "Vintage Bass", cat: "Bass", play(ctx, out, t, o){
+    const f = ((o && o.freq) || 110);
+    _tone(ctx, out, t, { type: "triangle", f0: f, dur: 0.4, peak: 0.55, lp: 1200 });
+    _tone(ctx, out, t, { f0: f / 2, dur: 0.4, peak: 0.4 });
+  }},
+  hooverbass: { label: "Hoover Bass", cat: "Bass", play(ctx, out, t, o){
+    const f = ((o && o.freq) || 110) / 2;
+    _chord(ctx, out, t, { freqs: [f, f * 1.5, f * 2.02], type: "sawtooth", dur: (o && o.dur) || 0.55, peak: 0.34, a: 0.06, lp: 1500, detune: 14 });
+  }},
+  /* ----- Synths ----- */
+  ravelead: { label: "Rave Lead", cat: "Synths", play(ctx, out, t, o){
+    const f = (o && o.freq) || 660;
+    _tone(ctx, out, t, { type: "sawtooth", f0: f, dur: 0.34, peak: 0.3, lp: 4200 });
+    _tone(ctx, out, t, { type: "sawtooth", f0: f * 1.007, dur: 0.34, peak: 0.3, lp: 4200 });
+    _tone(ctx, out, t, { type: "square", f0: f / 2, dur: 0.34, peak: 0.14, lp: 3000 });
+  }},
+  formantlead: { label: "Formant Lead", cat: "Synths", play(ctx, out, t, o){
+    const f = (o && o.freq) || 440, dur = 0.5;
+    const osc = ctx.createOscillator(); osc.type = "sawtooth"; osc.frequency.value = f * _curPitch;
+    const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 6;
+    bp.frequency.setValueAtTime(500, t);
+    bp.frequency.exponentialRampToValueAtTime(1600, t + dur * 0.5);
+    bp.frequency.exponentialRampToValueAtTime(700, t + dur);
+    const g = envGain(ctx, t, 0.5, dur, out);
+    osc.connect(bp); bp.connect(g); osc.start(t); osc.stop(t + dur + 0.05);
+  }},
+  glassarp: { label: "Glass Arp", cat: "Synths", play(ctx, out, t, o){
+    const f = (o && o.freq) || 880;
+    _fm(ctx, out, t, { freq: f, ratio: 4.2, index: 2.4, dur: 0.3, peak: 0.4 });
+    _fm(ctx, out, t + 0.09, { freq: f * 1.5, ratio: 4.2, index: 2, dur: 0.26, peak: 0.3 });
+  }},
+  superpluck: { label: "Super Pluck", cat: "Synths", play(ctx, out, t, o){
+    const f = (o && o.freq) || 660;
+    [-9, 0, 9].forEach(d => {
+      const osc = ctx.createOscillator(); osc.type = "sawtooth";
+      osc.frequency.value = f * _curPitch; osc.detune.value = d;
+      const fl = ctx.createBiquadFilter(); fl.type = "lowpass"; fl.Q.value = 3;
+      fl.frequency.setValueAtTime(3800, t);
+      fl.frequency.exponentialRampToValueAtTime(500, t + 0.25);
+      const g = envGain(ctx, t, 0.22, 0.28, out);
+      osc.connect(fl); fl.connect(g); osc.start(t); osc.stop(t + 0.32);
+    });
+  }},
+  glidelead: { label: "Glide Lead", cat: "Synths", play(ctx, out, t, o){
+    const f = ((o && o.freq) || 660) * _curPitch, dur = 0.42;
+    const osc = ctx.createOscillator(), g = envGain(ctx, t, 0.42, dur, out);
+    osc.type = "square";
+    osc.frequency.setValueAtTime(f / 2, t);
+    osc.frequency.exponentialRampToValueAtTime(f, t + 0.09);
+    const fl = ctx.createBiquadFilter(); fl.type = "lowpass"; fl.frequency.value = 2600;
+    osc.connect(fl); fl.connect(g); osc.start(t); osc.stop(t + dur + 0.05);
+  }},
+  theremin: { label: "Theremin", cat: "Synths", play(ctx, out, t, o){
+    const f = ((o && o.freq) || 660) * _curPitch, dur = (o && o.dur) || 0.6;
+    const osc = ctx.createOscillator(); osc.type = "sine"; osc.frequency.value = f;
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 5.5;
+    const lg = ctx.createGain(); lg.gain.value = f * 0.012;
+    lfo.connect(lg); lg.connect(osc.frequency);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.4, t + 0.07);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    osc.connect(g); g.connect(out);
+    osc.start(t); osc.stop(t + dur + 0.05); lfo.start(t); lfo.stop(t + dur + 0.05);
+  }},
+  /* ----- Pads ----- */
+  aurorapad: { label: "Aurora Pad", cat: "Pads", play(ctx, out, t, o){
+    _chord(ctx, out, t, { freqs: [220, 277.2, 329.6, 440], type: "triangle", dur: (o && o.dur) || 2.2, peak: 0.2, a: 0.6, lp: 2400, detune: 5 });
+  }},
+  cassettepad: { label: "Cassette Pad", cat: "Pads", play(ctx, out, t, o){
+    _chord(ctx, out, t, { freqs: [196, 246.9, 293.7], type: "triangle", dur: (o && o.dur) || 2.0, peak: 0.24, a: 0.4, lp: 1300, detune: 16 });
+  }},
+  voidpad: { label: "Void Pad", cat: "Pads", play(ctx, out, t, o){
+    _chord(ctx, out, t, { freqs: [110, 130.8, 164.8, 196], type: "sine", dur: (o && o.dur) || 2.4, peak: 0.26, a: 0.7, lp: 700 });
+  }},
+  stargazerpad: { label: "Stargazer Pad", cat: "Pads", play(ctx, out, t, o){
+    _chord(ctx, out, t, { freqs: [261.6, 329.6, 392, 523.3], type: "sawtooth", dur: (o && o.dur) || 2.2, peak: 0.13, a: 0.55, lp: 1800, detune: 8 });
+    _fm(ctx, out, t, { freq: 1046.5, ratio: 2, index: 0.6, dur: 1.6, peak: 0.05, a: 0.5 });
+  }},
+  /* ----- Keys ----- */
+  feltpiano: { label: "Felt Piano", cat: "Keys", play(ctx, out, t, o){
+    const f = (o && o.freq) || 440;
+    _tone(ctx, out, t, { type: "triangle", f0: f, dur: 0.9, peak: 0.5, lp: 2200 });
+    _tone(ctx, out, t, { type: "sine", f0: f * 2, dur: 0.4, peak: 0.16 });
+    _noise(ctx, out, t, { type: "lowpass", freq: 1800, dur: 0.03, peak: 0.1 });
+  }},
+  glasskeys: { label: "Glass Keys", cat: "Keys", play(ctx, out, t, o){
+    _fm(ctx, out, t, { freq: (o && o.freq) || 660, ratio: 5.1, index: 1.8, dur: 0.8, peak: 0.4 });
+  }},
+  celesta: { label: "Celesta", cat: "Keys", play(ctx, out, t, o){
+    const f = ((o && o.freq) || 660) * 2;
+    _tone(ctx, out, t, { type: "sine", f0: f, dur: 0.7, peak: 0.4 });
+    _tone(ctx, out, t, { type: "sine", f0: f * 3.98, dur: 0.25, peak: 0.1 });
+  }},
+  dulcimer: { label: "Dulcimer", cat: "Keys", play(ctx, out, t, o){
+    const f = (o && o.freq) || 523.3;
+    _tone(ctx, out, t, { type: "triangle", f0: f, dur: 0.5, peak: 0.4, lp: 3600 });
+    _tone(ctx, out, t + 0.02, { type: "triangle", f0: f * 2, dur: 0.3, peak: 0.15 });
+  }},
+  /* ----- FX ----- */
+  subdrop: { label: "Sub Drop", cat: "FX", play(ctx, out, t){
+    _tone(ctx, out, t, { f0: 130, f1: 26, ft: 0.8, dur: 0.95, peak: 0.95 });
+  }},
+  revhit: { label: "Reverse Hit", cat: "FX", play(ctx, out, t){
+    const n = noiseSource(ctx), bp = ctx.createBiquadFilter();
+    bp.type = "bandpass"; bp.frequency.value = 900; bp.Q.value = 0.8;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.7, t + 0.55);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+    n.connect(bp); bp.connect(g); g.connect(out);
+    n.start(t); n.stop(t + 0.65);
+    _tone(ctx, out, t + 0.55, { f0: 180, f1: 40, ft: 0.08, dur: 0.25, peak: 0.8 });
+  }},
+  glitch: { label: "Glitch Burst", cat: "FX", play(ctx, out, t){
+    [0, 0.05, 0.09, 0.16, 0.2, 0.29].forEach((off, i) =>
+      _tone(ctx, out, t + off, { type: "square", f0: [1400, 700, 2100, 500, 1800, 900][i], dur: 0.035, peak: 0.28 }));
+    _noise(ctx, out, t + 0.12, { type: "highpass", freq: 3000, dur: 0.05, peak: 0.2 });
+  }},
+  raidsiren: { label: "Raid Siren", cat: "FX", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 0.9;
+    const osc = ctx.createOscillator(), g = envGain(ctx, t, 0.3, dur, out);
+    osc.type = "triangle";
+    for (let i = 0; i < 6; i++)
+      osc.frequency.setValueAtTime(i % 2 ? 660 : 520, t + i * dur / 6);
+    osc.connect(g); osc.start(t); osc.stop(t + dur + 0.05);
+  }},
+  wind: { label: "Wind Sweep", cat: "FX", play(ctx, out, t, o){
+    const dur = (o && o.dur) || 1.1;
+    _noise(ctx, out, t, { freq: 300, f1: 1500, q: 2.2, dur: dur, peak: 0.4, a: dur * 0.4 });
+  }}
+};
+Object.assign(SOUNDS, NEW_SOUNDS_V22);
 const SOUND_CATEGORIES = ["Drums", "Bass", "Synths", "Pads", "Keys", "FX", "Custom"];
 function soundCategory(name){
   if (typeof name === "string" && name.indexOf("custom:") === 0) return "Custom";
@@ -1196,6 +1500,7 @@ function demoToState(demo){
   if (!demo) return null;
   return {
     bpm: clamp(demo.bpm || 120, 60, 200), swing: clamp(demo.swing || 0, 0, 50),
+    loopBars: 4,
     fx: Object.assign({}, DEFAULT_FX),
     tracks: demo.tracks.filter(row => SOUNDS[row[0]]).map(row =>
       mkTrack(row[0], pattern(row[1], row[2], row[3], row[4])))
@@ -1240,6 +1545,75 @@ function triggerSound(ctx, dest, t, name, mp3Buffer, opts){
 }
 
 /* ============================================================
+   v2.2 — LOOP LENGTH (bars), BAR EDITING, PER-TRACK CHANNEL STRIP.
+   The grid now stores 128 steps (8 bars). loopBars decides how
+   many bars actually loop (1, 2, 3, 4, 6 or 8). Old projects and
+   presets carry 4 bars of pattern; bars 5-8 start empty and the
+   bar tools (copy / fill) exist to build them out.
+   ============================================================ */
+const LOOP_BARS_OPTIONS = [1, 2, 3, 4, 6, 8];
+const MAX_BARS = 8, STEPS_PER_BAR = 16, MAX_STEPS = MAX_BARS * STEPS_PER_BAR;
+function sanitizeLoopBars(v){
+  v = Math.round(+v);
+  return LOOP_BARS_OPTIONS.indexOf(v) >= 0 ? v : 4;
+}
+function loopStepsFor(bars){ return sanitizeLoopBars(bars) * STEPS_PER_BAR; }
+function barOfStep(step){ return Math.floor(step / STEPS_PER_BAR); }
+function stepInLoop(step, bars){ return step >= 0 && step < loopStepsFor(bars); }
+function copyBarSteps(steps, fromBar, toBar){
+  const out = steps.slice();
+  fromBar = clamp(Math.round(+fromBar) || 0, 0, MAX_BARS - 1);
+  toBar = clamp(Math.round(+toBar) || 0, 0, MAX_BARS - 1);
+  for (let i = 0; i < STEPS_PER_BAR; i++)
+    out[toBar * STEPS_PER_BAR + i] = !!out[fromBar * STEPS_PER_BAR + i];
+  return out;
+}
+function clearBarSteps(steps, bar){
+  const out = steps.slice();
+  bar = clamp(Math.round(+bar) || 0, 0, MAX_BARS - 1);
+  for (let i = 0; i < STEPS_PER_BAR; i++) out[bar * STEPS_PER_BAR + i] = false;
+  return out;
+}
+function fillLoopFromBar(steps, bar, bars){
+  let out = steps.slice();
+  bar = clamp(Math.round(+bar) || 0, 0, MAX_BARS - 1);
+  const n = sanitizeLoopBars(bars);
+  for (let b = 0; b < n; b++) if (b !== bar) out = copyBarSteps(out, bar, b);
+  return out;
+}
+/* Per-track channel strip (v2.2): 3-band EQ + delay/reverb sends, on
+   top of the existing volume/pan/mute/solo, pitch and tone. Defaults
+   are neutral (EQ flat, sends off), so older projects sound the same. */
+function defaultChannel(){
+  return { eqLow: 0, eqMid: 0, eqHigh: 0, delaySend: 0, reverbSend: 0 };
+}
+function sanitizeChannel(c){
+  const d = defaultChannel(); c = c || {};
+  const num = (k, lo, hi) => clamp(c[k] == null ? d[k] : (+c[k] || 0), lo, hi);
+  return {
+    eqLow: num("eqLow", -50, 50), eqMid: num("eqMid", -50, 50),
+    eqHigh: num("eqHigh", -50, 50),
+    delaySend: num("delaySend", 0, 100), reverbSend: num("reverbSend", 0, 100)
+  };
+}
+/* Shared sequencer FX return buses (delay + reverb) that the
+   per-channel sends feed. Works on live and offline contexts. */
+function buildSeqFxBuses(c, dest){
+  const delayIn = c.createGain(); delayIn.gain.value = 1;
+  const delay = c.createDelay(2.0); delay.delayTime.value = 0.28;
+  const fb = c.createGain(); fb.gain.value = 0.38;
+  const delayWet = c.createGain(); delayWet.gain.value = 0.9;
+  delayIn.connect(delay); delay.connect(fb); fb.connect(delay);
+  delay.connect(delayWet); delayWet.connect(dest);
+  const revIn = c.createGain(); revIn.gain.value = 1;
+  const conv = c.createConvolver(); conv.buffer = makeImpulse(c, 1.9, 2.6);
+  const revWet = c.createGain(); revWet.gain.value = 0.9;
+  revIn.connect(conv); conv.connect(revWet); revWet.connect(dest);
+  return { delay: delayIn, reverb: revIn, delayNode: delay, delayWet: delayWet,
+           conv: conv, revWet: revWet };
+}
+
+/* ============================================================
    PRESET PATTERNS — each row is [soundName, four 16-step bars].
    ============================================================ */
 const PRESETS = {
@@ -1276,15 +1650,18 @@ function presetToTracks(name){
 
 /* ============================================================
    PROJECT MODEL — pure serialize/parse (no DOM, no audio).
-   State shape: { bpm, swing, fx:{...}, tracks:[{sound, steps
-   (bool[64]), volume, pan, mute, solo}] }
+   State shape: { bpm, swing, loopBars, fx:{...}, tracks:[{sound, steps
+   (bool[128]), volume, pan, mute, solo, chan:{...}}] }
    ============================================================ */
 const DEFAULT_FX = { drive:0, crush:0, lp:1000, hp:0, pan:0, master:90,
-                     delayTime:28, delayMix:0, reverb:0, deckVol:90 };
+                     delayTime:28, delayMix:0, reverb:0, deckVol:90,
+                     gate:0, phaser:0 };
 function mkTrack(sound, steps){
-  const t = { sound: sound, steps: steps || new Array(64).fill(false),
+  const t = { sound: sound, steps: steps || new Array(MAX_STEPS).fill(false),
     volume: 0.9, pan: 0, mute: false, solo: false,
-    morph: 0, morphTarget: "", tone: defaultTone() };
+    morph: 0, morphTarget: "", tone: defaultTone(), chan: defaultChannel() };
+  if (t.steps.length < MAX_STEPS)
+    t.steps = t.steps.concat(new Array(MAX_STEPS - t.steps.length).fill(false));
   return Object.assign(t, defaultTrackPitch());
 }
 function defaultTracks(){
@@ -1293,14 +1670,16 @@ function defaultTracks(){
 }
 function serializeProject(state){
   return JSON.stringify({
-    app: "FruityMcLoops", version: 3,
+    app: "FruityMcLoops", version: 4,
     bpm: state.bpm, swing: state.swing,
+    loopBars: sanitizeLoopBars(state.loopBars),
     fx: Object.assign({}, state.fx),
     tracks: state.tracks.map(t => {
       const p = sanitizeTrackPitch(t), tn = sanitizeTone(t.tone);
       return {
         sound: t.sound, steps: stepsToString(t.steps),
         volume: t.volume, pan: t.pan, mute: !!t.mute, solo: !!t.solo,
+        chan: sanitizeChannel(t.chan),
         key: p.key, scale: p.scale, rootNote: p.rootNote,
         octave: p.octave, transpose: p.transpose,
         morph: clamp(Math.round(t.morph || 0), 0, 100),
@@ -1317,13 +1696,15 @@ function parseProject(json){
   return {
     bpm: clamp(+o.bpm || 132, 60, 200),
     swing: clamp(+o.swing || 0, 0, 50),
+    loopBars: sanitizeLoopBars(o.loopBars),
     fx: fx,
     tracks: o.tracks.map(t => Object.assign(mkTrack(
       (t.sound === MP3_SOUND || SOUNDS[t.sound] || (typeof t.sound === "string" && t.sound.indexOf("custom:") === 0)) ? t.sound : "kick",
-      stringToSteps(t.steps, 64)), {
+      stringToSteps(t.steps, MAX_STEPS)), {
       volume: clamp(t.volume == null ? 0.9 : +t.volume, 0, 1),
       pan: clamp(t.pan == null ? 0 : +t.pan, -1, 1),
       mute: !!t.mute, solo: !!t.solo,
+      chan: sanitizeChannel(t.chan),
       morph: clamp(Math.round(t.morph || 0), 0, 100),
       morphTarget: (typeof t.morphTarget === "string" &&
         (SOUNDS[t.morphTarget] || t.morphTarget === MP3_SOUND || t.morphTarget.indexOf("custom:") === 0)) ? t.morphTarget : "",
@@ -1441,7 +1822,7 @@ function sanitizeTone(tone){
 }
 /* Tone chain: input -> waveshaper drive -> lowpass -> volume gain -> out.
    Returns the node a track's sounds should connect into. */
-function buildToneChain(c, tr, dest){
+function buildToneChain(c, tr, dest, sends){
   const input = c.createWaveShaper();
   input.curve = makeDistortionCurve((tr.tone || defaultTone()).drive || 0);
   input.oversample = "2x";
@@ -1450,16 +1831,52 @@ function buildToneChain(c, tr, dest){
   const tn = tr.tone || defaultTone();
   filter.frequency.value = tn.cutoff;
   filter.Q.value = tn.resonance;
+  /* v2.2 channel EQ: lowshelf / peaking / highshelf, from the strip */
+  const ch = sanitizeChannel(tr.chan);
+  const eqLow = c.createBiquadFilter(); eqLow.type = "lowshelf"; eqLow.frequency.value = 200;
+  eqLow.gain.value = eqDbFromSlider(ch.eqLow);
+  const eqMid = c.createBiquadFilter(); eqMid.type = "peaking"; eqMid.frequency.value = 1000; eqMid.Q.value = 0.9;
+  eqMid.gain.value = eqDbFromSlider(ch.eqMid);
+  const eqHigh = c.createBiquadFilter(); eqHigh.type = "highshelf"; eqHigh.frequency.value = 4000;
+  eqHigh.gain.value = eqDbFromSlider(ch.eqHigh);
   const gain = c.createGain();
   gain.gain.value = tr.volume;
   let tail = gain;
+  let panNode = null;
   if (c.createStereoPanner){
-    const pan = c.createStereoPanner(); pan.pan.value = tr.pan;
-    gain.connect(pan); tail = pan;
+    panNode = c.createStereoPanner(); panNode.pan.value = tr.pan;
+    gain.connect(panNode); tail = panNode;
   }
-  input.connect(filter); filter.connect(gain); tail.connect(dest);
-  return { input: input, filter: filter, shaper: input, gain: gain,
-           pan: tail !== gain ? tail : null };
+  input.connect(filter); filter.connect(eqLow); eqLow.connect(eqMid);
+  eqMid.connect(eqHigh); eqHigh.connect(gain); tail.connect(dest);
+  /* v2.2 per-channel FX sends (post-fader) */
+  let delaySend = null, reverbSend = null;
+  if (sends && sends.delay){
+    delaySend = c.createGain(); delaySend.gain.value = ch.delaySend / 100;
+    tail.connect(delaySend); delaySend.connect(sends.delay);
+  }
+  if (sends && sends.reverb){
+    reverbSend = c.createGain(); reverbSend.gain.value = ch.reverbSend / 100;
+    tail.connect(reverbSend); reverbSend.connect(sends.reverb);
+  }
+  const nodes = { input: input, filter: filter, shaper: input, gain: gain,
+    pan: panNode, eqLow: eqLow, eqMid: eqMid, eqHigh: eqHigh,
+    delaySend: delaySend, reverbSend: reverbSend };
+  nodes.all = [input, filter, eqLow, eqMid, eqHigh, gain, panNode, delaySend, reverbSend]
+    .filter(Boolean);
+  return nodes;
+}
+function applyChannelToChain(nodes, tr){
+  if (!nodes) return;
+  const ch = sanitizeChannel(tr.chan);
+  const t = (typeof performance !== "undefined") ? 0 : 0;
+  if (nodes.eqLow) nodes.eqLow.gain.value = eqDbFromSlider(ch.eqLow);
+  if (nodes.eqMid) nodes.eqMid.gain.value = eqDbFromSlider(ch.eqMid);
+  if (nodes.eqHigh) nodes.eqHigh.gain.value = eqDbFromSlider(ch.eqHigh);
+  if (nodes.delaySend) nodes.delaySend.gain.value = ch.delaySend / 100;
+  if (nodes.reverbSend) nodes.reverbSend.gain.value = ch.reverbSend / 100;
+  if (nodes.gain) nodes.gain.gain.value = tr.volume;
+  if (nodes.pan && nodes.pan.pan) nodes.pan.pan.value = tr.pan;
 }
 function applyToneToChain(nodes, tr){
   if (!nodes) return;
@@ -1594,7 +2011,11 @@ const DECK_FX = [
   { id: "reverb", label: "Reverb" },
   { id: "wobble", label: "Dubstep Wobble (LFO filter)" },
   { id: "crush",  label: "Bitcrusher" },
-  { id: "flanger", label: "Flanger" }
+  { id: "flanger", label: "Flanger" },
+  { id: "phaser", label: "Phaser" },
+  { id: "gate",   label: "Trance Gate (BPM-synced)" },
+  { id: "ringmod", label: "Ring Modulator" },
+  { id: "chorus", label: "Chorus" }
 ];
 const DECK_FX_IDS = DECK_FX.map(f => f.id);
 /* Beat divisions in beats-per-cycle (wobble LFO / echo). */
@@ -1685,6 +2106,10 @@ if (typeof module !== "undefined" && module.exports){
     scaleContains, scaleDegreeFreq, defaultTrackPitch, sanitizeTrackPitch,
     trackRootFreq, trackPitchFactor, defaultTone, sanitizeTone,
     buildToneChain, applyToneToChain, playTrackSound,
+    LOOP_BARS_OPTIONS, MAX_BARS, STEPS_PER_BAR, MAX_STEPS, sanitizeLoopBars,
+    loopStepsFor, barOfStep, stepInLoop, copyBarSteps, clearBarSteps,
+    fillLoopFromBar, defaultChannel, sanitizeChannel, applyChannelToChain,
+    buildSeqFxBuses, NEW_SOUNDS_V22,
     STEM_MODES, stemGains, stemSample, buildStemChain,
     DECK_LETTERS, crossfaderGain, syncRate,
     DJ_SETTINGS_KEY, DEFAULT_DJ_SETTINGS, sanitizeDJSettings,
@@ -1731,6 +2156,8 @@ function ensureCtx(){
   comp.attack.value = 0.004; comp.release.value = 0.18;
   master.connect(comp); comp.connect(ctx.destination);
   const seqBus = ctx.createGain(); seqBus.gain.value = 0.92; seqBus.connect(master);
+  /* v2.2: shared delay/reverb return buses fed by per-channel sends */
+  const seqFx = buildSeqFxBuses(ctx, seqBus);
   /* MP3 channel: in -> distort -> LP -> HP -> crush -> sends/dry -> pan -> bus -> KILL -> deckVol -> master */
   const mp3In = ctx.createGain();
   const shaper = ctx.createWaveShaper(); shaper.oversample = "2x";
@@ -1740,9 +2167,29 @@ function ensureCtx(){
   const fxOut = ctx.createGain();
   mp3In.connect(shaper); shaper.connect(lpF); lpF.connect(hpF);
   hpF.connect(crush); crush.connect(fxOut);
+  /* v2.2: phaser + trance gate on the deck bus (amount 0 = bypassed) */
+  const phaserIn = ctx.createGain(), phaserDry = ctx.createGain(), phaserWet = ctx.createGain();
+  phaserWet.gain.value = 0;
+  const phaserStages = [];
+  let phPrev = phaserIn;
+  [300, 620, 980, 1450].forEach(fr => {
+    const ap = ctx.createBiquadFilter(); ap.type = "allpass"; ap.frequency.value = fr; ap.Q.value = 6;
+    phPrev.connect(ap); phPrev = ap; phaserStages.push(ap);
+  });
+  phPrev.connect(phaserWet);
+  const phaserLfo = ctx.createOscillator(); phaserLfo.type = "sine"; phaserLfo.frequency.value = 0.3;
+  const phaserLfoAmt = ctx.createGain(); phaserLfoAmt.gain.value = 0;
+  phaserLfo.connect(phaserLfoAmt);
+  phaserStages.forEach(ap => phaserLfoAmt.connect(ap.frequency));
+  phaserLfo.start();
+  const gateGain = ctx.createGain();
+  const gateLfo = ctx.createOscillator(); gateLfo.type = "square"; gateLfo.frequency.value = 4;
+  const gateDepth = ctx.createGain(); gateDepth.gain.value = 0;
+  gateLfo.connect(gateDepth); gateDepth.connect(gateGain.gain); gateLfo.start();
   const pan = ctx.createStereoPanner();
   const mp3Bus = ctx.createGain();
-  fxOut.connect(pan); pan.connect(mp3Bus);
+  fxOut.connect(phaserIn); phaserIn.connect(phaserDry); phaserDry.connect(gateGain);
+  phaserWet.connect(gateGain); gateGain.connect(pan); pan.connect(mp3Bus);
   /* delay send/return */
   const delaySend = ctx.createGain(); delaySend.gain.value = 0;
   const delay = ctx.createDelay(2.0); delay.delayTime.value = 0.28;
@@ -1763,8 +2210,9 @@ function ensureCtx(){
   mp3Bus.connect(killGain); killGain.connect(deckGain); deckGain.connect(master);
   const recDest = ctx.createMediaStreamDestination ? ctx.createMediaStreamDestination() : null;
   if (recDest) comp.connect(recDest);
-  N = { master, comp, seqBus, mp3In, shaper, lpF, hpF, crush, pan,
+  N = { master, comp, seqBus, seqFx, mp3In, shaper, lpF, hpF, crush, pan,
         delaySend, delay, delayWet, revSend, conv, revWet, killGain, deckGain,
+        phaserWet, phaserLfo, phaserLfoAmt, gateGain, gateDepth, gateLfo,
         recDest: recDest };
   buildTrackNodes();
   buildAllDeckChains();
@@ -1788,6 +2236,21 @@ function applyFx(){
   N.delaySend.gain.setTargetAtTime(fx.delayMix / 100, t, tc);
   N.revSend.gain.setTargetAtTime(fx.reverb / 100, t, tc);
   N.deckGain.gain.setTargetAtTime(fx.deckVol / 100, t, tc);
+  /* v2.2: sequencer FX bus follows the master delay time */
+  if (N.seqFx && N.seqFx.delayNode)
+    N.seqFx.delayNode.delayTime.setTargetAtTime(fx.delayTime / 100, t, tc);
+  if (N.phaserWet){
+    const ph = (fx.phaser || 0) / 100;
+    N.phaserWet.gain.setTargetAtTime(ph * 0.85, t, tc);
+    N.phaserLfoAmt.gain.setTargetAtTime(ph > 0 ? 420 : 0, t, tc);
+    N.phaserLfo.frequency.setTargetAtTime(0.15 + ph * 0.9, t, tc);
+  }
+  if (N.gateDepth){
+    const gd = (fx.gate || 0) / 100 * 0.55;
+    N.gateDepth.gain.setTargetAtTime(gd, t, tc);
+    N.gateGain.gain.setTargetAtTime(1 - gd, t, tc);
+    N.gateLfo.frequency.setTargetAtTime(Math.max(0.5, bpm / 30), t, tc);
+  }
 }
 function setKill(on){
   killOn = on;
@@ -1883,6 +2346,45 @@ function buildDeckFx(d){
     const sh = ctx.createWaveShaper(); sh.oversample = "none"; all.push(sh);
     fxIn.connect(sh); sh.connect(fxOut);
     d.fxNodes = { all, oscs, shaper: sh };
+  } else if (type === "phaser"){
+    const dry = G(), wet = G();
+    fxIn.connect(dry); dry.connect(fxOut);
+    let prev = fxIn; const stages = [];
+    [280, 560, 900, 1350].forEach(fr => {
+      const ap = ctx.createBiquadFilter(); ap.type = "allpass"; ap.frequency.value = fr; ap.Q.value = 6;
+      all.push(ap); prev.connect(ap); prev = ap; stages.push(ap);
+    });
+    prev.connect(wet); wet.connect(fxOut);
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 0.4;
+    const lg = ctx.createGain(); lg.gain.value = 0; all.push(lg); oscs.push(lfo);
+    lfo.connect(lg); stages.forEach(ap => lg.connect(ap.frequency)); lfo.start();
+    d.fxNodes = { all, oscs, wet, dry, lfo, lfoGain: lg, stages };
+  } else if (type === "gate"){
+    const gnode = G();
+    fxIn.connect(gnode); gnode.connect(fxOut);
+    const lfo = ctx.createOscillator(); lfo.type = "square";
+    const lg = ctx.createGain(); lg.gain.value = 0; all.push(lg); oscs.push(lfo);
+    lfo.connect(lg); lg.connect(gnode.gain); lfo.start();
+    d.fxNodes = { all, oscs, gate: gnode, lfo, lfoGain: lg };
+  } else if (type === "ringmod"){
+    const dry = G(), ring = G(); ring.gain.value = 0;
+    fxIn.connect(dry); dry.connect(fxOut);
+    fxIn.connect(ring); ring.connect(fxOut);
+    const car = ctx.createOscillator(); car.frequency.value = 60;
+    const cg = ctx.createGain(); cg.gain.value = 1; all.push(cg); oscs.push(car);
+    car.connect(cg); cg.connect(ring.gain); car.start();
+    d.fxNodes = { all, oscs, ring, dry, carrier: car };
+  } else if (type === "chorus"){
+    const dry = G(), delay = ctx.createDelay(0.06), wet = G(), fb = G();
+    all.push(delay);
+    fxIn.connect(dry); dry.connect(fxOut);
+    fxIn.connect(delay); delay.connect(fb); fb.connect(delay);
+    delay.connect(wet); wet.connect(fxOut);
+    fb.gain.value = 0.18; delay.delayTime.value = 0.018;
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 0.9;
+    const lg = ctx.createGain(); lg.gain.value = 0.0035; all.push(lg); oscs.push(lfo);
+    lfo.connect(lg); lg.connect(delay.delayTime); lfo.start();
+    d.fxNodes = { all, oscs, delay, wet, dry, lfo };
   } else if (type === "flanger"){
     const dry = G(), delay = ctx.createDelay(0.05), wet = G();
     const lfo = ctx.createOscillator(); lfo.frequency.value = 0.3;
@@ -1932,6 +2434,27 @@ function applyDeckFxParams(d){
   if (d.fxType === "flanger" && n.wet){
     n.wet.gain.setTargetAtTime(a * 0.7, t, 0.03);
     n.dry.gain.setTargetAtTime(1 - a * 0.3, t, 0.03);
+  }
+  if (d.fxType === "phaser" && n.wet){
+    n.wet.gain.setTargetAtTime(a * 0.85, t, 0.03);
+    n.dry.gain.setTargetAtTime(1, t, 0.03);
+    if (n.lfo) n.lfo.frequency.setTargetAtTime(0.15 + a * 1.4, t, 0.03);
+    if (n.lfoGain) n.lfoGain.gain.setTargetAtTime(a * 700, t, 0.03);
+  }
+  if (d.fxType === "gate" && n.gate){
+    const depth = a * 0.5;
+    n.gate.gain.setTargetAtTime(1 - depth, t, 0.03);
+    if (n.lfoGain) n.lfoGain.gain.setTargetAtTime(depth, t, 0.03);
+    if (n.lfo) n.lfo.frequency.setTargetAtTime(wobbleHz(deckFxBpm(d), d.fxDiv), t, 0.03);
+  }
+  if (d.fxType === "ringmod" && n.carrier){
+    n.carrier.frequency.setTargetAtTime(25 + a * 480, t, 0.03);
+    if (n.dry) n.dry.gain.setTargetAtTime(1 - a * 0.75, t, 0.03);
+  }
+  if (d.fxType === "chorus" && n.wet){
+    n.wet.gain.setTargetAtTime(a * 0.65, t, 0.03);
+    n.dry.gain.setTargetAtTime(1 - a * 0.25, t, 0.03);
+    if (n.lfo) n.lfo.frequency.setTargetAtTime(0.4 + a * 1.6, t, 0.03);
   }
 }
 /* ----- stem mode + offline stem render ----- */
@@ -2287,6 +2810,17 @@ function buildDeckUI(){
         '<span class="note">(blank = use loop region)</span>' +
       '</div>';
     wrap.appendChild(card);
+    /* v2.2: fold each deck — Deck A starts open, B–D tucked away */
+    const deckBody = document.createElement("div"); deckBody.className = "deckBody";
+    Array.from(card.childNodes)
+      .filter(nd => nd.tagName !== "H3")
+      .forEach(nd => deckBody.appendChild(nd));
+    card.appendChild(deckBody);
+    if (d.idx > 0) card.classList.add("closed");
+    card.querySelector("h3").addEventListener("click", e => {
+      if (e.target.closest("button")) return;
+      card.classList.toggle("closed");
+    });
     const q = sel => card.querySelector(sel);
     const E = d.els = {
       card, fileName: q(".fname"), wave: q(".wave"), platter: q(".platter"),
@@ -2492,6 +3026,7 @@ function tick(){
    ============================================================ */
 const drawQueue = [];
 const seq = { playing:false, step:0, nextTime:0, timer:null };
+let loopBars = 4;   /* v2.2: how many of the 8 stored bars actually loop */
 /* DJ settings (localStorage-persisted) */
 function loadDjSettings(){
   try { return sanitizeDJSettings(JSON.parse(localStorage.getItem(DJ_SETTINGS_KEY) || "null")); }
@@ -2558,12 +3093,13 @@ function trackAudible(tr){
 function buildTrackNodes(){
   if (!ctx) return;
   trackNodes.forEach(n => {
-    try { n.input.disconnect(); } catch(e){}
-    try { n.gain.disconnect(); } catch(e){}
-    if (n.pan){ try { n.pan.disconnect(); } catch(e){} }
+    (n.all || [n.input, n.gain, n.pan]).forEach(node => {
+      if (node){ try { node.disconnect(); } catch(e){} }
+    });
   });
   trackNodes.clear();
-  tracks.forEach(tr => trackNodes.set(tr.id, buildToneChain(ctx, tr, N.seqBus)));
+  const sends = (N.seqFx) ? { delay: N.seqFx.delay, reverb: N.seqFx.reverb } : undefined;
+  tracks.forEach(tr => trackNodes.set(tr.id, buildToneChain(ctx, tr, N.seqBus, sends)));
 }
 function scheduleStep(s, t){
   const sd = stepDur();
@@ -2579,7 +3115,7 @@ function scheduler(){
   while (seq.nextTime < ctx.currentTime + 0.12){
     scheduleStep(seq.step, seq.nextTime);
     seq.nextTime += stepDur();
-    seq.step = (seq.step + 1) % 64;
+    seq.step = (seq.step + 1) % loopStepsFor(loopBars);
   }
 }
 function startSeq(){
@@ -2599,7 +3135,7 @@ function stopSeq(){
   highlightStep(-1);
   $("seqPlayBtn").classList.remove("on");
   $("seqPlayBtn").textContent = "▶ PLAY";
-  $("barLabel").textContent = "BAR 1/4";
+  $("barLabel").textContent = "BAR 1/" + loopBars;
 }
 function highlightStep(s){
   if (prevStep >= 0){
@@ -2610,7 +3146,7 @@ function highlightStep(s){
   if (s >= 0){
     document.querySelectorAll('.cell[data-step="' + s + '"], .rcell[data-step="' + s + '"]')
       .forEach(c => c.classList.add("now"));
-    $("barLabel").textContent = "BAR " + (Math.floor(s / 16) + 1) + "/4 • STEP " + (s + 1);
+    $("barLabel").textContent = "BAR " + (Math.floor(s / 16) + 1) + "/" + loopBars + " • STEP " + (s + 1);
   }
 }
 
@@ -2639,12 +3175,13 @@ function renderTracks(){
   /* ruler */
   const ruler = document.createElement("div"); ruler.className = "ruler";
   const rsp = document.createElement("div"); rsp.className = "rspacer";
-  rsp.textContent = "TRACKS ▸ scroll for 64 steps ▸";
+  rsp.textContent = "TRACKS ▸ " + MAX_STEPS + " steps (8 bars) ▸";
   ruler.appendChild(rsp);
   const rcells = document.createElement("div"); rcells.className = "rcells";
-  for (let i = 0; i < 64; i++){
+  for (let i = 0; i < MAX_STEPS; i++){
     const c = document.createElement("div");
-    c.className = "rcell" + (i % 16 === 0 && i > 0 ? " barStart" : "");
+    c.className = "rcell" + (i % 16 === 0 && i > 0 ? " barStart" : "") +
+      (i >= loopStepsFor(loopBars) ? " outLoop" : "");
     c.dataset.step = i;
     c.textContent = (i % 4 === 0) ? String(i + 1) : "·";
     rcells.appendChild(c);
@@ -2654,6 +3191,7 @@ function renderTracks(){
   tracks.forEach(tr => wrap.appendChild(trackRowEl(tr)));
   buildTrackNodes();
   refreshTrackLab();
+  renderMixer();
   prevStep = -1;
 }
 function trackRowEl(tr){
@@ -2662,7 +3200,7 @@ function trackRowEl(tr){
   const head = document.createElement("div"); head.className = "thead";
   const sel = document.createElement("select");
   sel.innerHTML = soundOptionsHTML(tr.sound);
-  sel.addEventListener("change", () => { tr.sound = sel.value; autosave(); });
+  sel.addEventListener("change", () => { tr.sound = sel.value; renderMixer(); autosave(); });
   head.appendChild(sel);
   const mkSlider = (label, min, max, val, fn) => {
     const d = document.createElement("div"); d.className = "mini";
@@ -2679,12 +3217,17 @@ function trackRowEl(tr){
     autosave();
   }));
   head.appendChild(mkSlider("PAN", -50, 50, Math.round(tr.pan * 50), v => {
-    tr.pan = v / 50; autosave(); buildTrackNodesSoft(tr);
+    tr.pan = v / 50;
+    const n = trackNodes.get(tr.id); if (n) applyChannelToChain(n, tr);
+    autosave();
   }));
   const btns = document.createElement("div"); btns.className = "tbtns";
   const bM = document.createElement("button"); bM.textContent = "M";
   bM.className = tr.mute ? "mOn" : "";
   bM.title = "Mute"; bM.addEventListener("click", () => { tr.mute = !tr.mute; bM.className = tr.mute ? "mOn" : ""; autosave(); });
+  const bCH = document.createElement("button"); bCH.textContent = "CH";
+  bCH.title = "Open this track's channel strip in the Mixer";
+  bCH.addEventListener("click", () => openChannelStrip(tr));
   const bS = document.createElement("button"); bS.textContent = "S";
   bS.className = tr.solo ? "sOn" : "";
   bS.title = "Solo"; bS.addEventListener("click", () => { tr.solo = !tr.solo; bS.className = tr.solo ? "sOn" : ""; autosave(); });
@@ -2699,13 +3242,14 @@ function trackRowEl(tr){
     tracks = tracks.filter(x => x.id !== tr.id);
     renderTracks(); autosave();
   });
-  btns.appendChild(bM); btns.appendChild(bS); btns.appendChild(bC); btns.appendChild(bX);
+  btns.appendChild(bM); btns.appendChild(bS); btns.appendChild(bCH); btns.appendChild(bC); btns.appendChild(bX);
   head.appendChild(btns);
   row.appendChild(head);
   const cells = document.createElement("div"); cells.className = "cells";
-  for (let i = 0; i < 64; i++){
+  for (let i = 0; i < MAX_STEPS; i++){
     const c = document.createElement("div");
-    c.className = "cell" + (Math.floor(i / 4) % 2 ? " alt" : "") + (i % 16 === 0 && i > 0 ? " barStart" : "");
+    c.className = "cell" + (Math.floor(i / 4) % 2 ? " alt" : "") + (i % 16 === 0 && i > 0 ? " barStart" : "") +
+      (i >= loopStepsFor(loopBars) ? " outLoop" : "");
     c.dataset.step = i;
     if (tr.steps[i]) c.classList.add("on");
     c.addEventListener("click", () => {
@@ -2720,16 +3264,158 @@ function trackRowEl(tr){
 }
 function buildTrackNodesSoft(){ if (ctx) buildTrackNodes(); }
 
+/* ---------------- v2.2: loop info, folders, mixer channel strips ---------------- */
+function updateLoopInfo(){
+  const el = $("loopInfo");
+  if (el) el.textContent = "Loop: " + loopBars + " bar" + (loopBars > 1 ? "s" : "") +
+    " • " + loopStepsFor(loopBars) + " steps";
+  const sel = $("loopBarsSel");
+  if (sel) sel.value = String(loopBars);
+  if (!seq.playing) { const bl = $("barLabel"); if (bl) bl.textContent = "BAR 1/" + loopBars; }
+}
+function setupFolders(){
+  document.querySelectorAll(".panel[data-fold]").forEach(panel => {
+    const h2 = panel.querySelector(":scope > h2");
+    if (!h2 || panel.dataset.foldDone) return;
+    panel.dataset.foldDone = "1";
+    const body = document.createElement("div"); body.className = "panelBody";
+    Array.from(panel.childNodes).filter(nd => nd !== h2).forEach(nd => body.appendChild(nd));
+    panel.appendChild(body);
+    h2.classList.add("foldable");
+    if (panel.dataset.fold === "closed") panel.classList.add("closed");
+    h2.addEventListener("click", () => panel.classList.toggle("closed"));
+  });
+}
+const stripEls = new Map();
+function fmtEq(v){ return isEqKill(v) ? "KILL" : eqDbFromSlider(v).toFixed(0) + " dB"; }
+function fmtPan(v){ return v === 0 ? "C" : (v < 0 ? "L" + Math.round(-v * 100) : "R" + Math.round(v * 100)); }
+function renderMixer(){
+  const wrap = $("mixerStrips");
+  if (!wrap) return;
+  const openIds = new Set();
+  stripEls.forEach((rec, id) => { if (rec.det.open) openIds.add(id); });
+  stripEls.clear();
+  wrap.innerHTML = "";
+  tracks.forEach((tr, i) => {
+    tr.chan = sanitizeChannel(tr.chan);
+    tr.tone = sanitizeTone(tr.tone);
+    const det = document.createElement("details");
+    det.className = "chanStrip"; det.dataset.trackId = tr.id;
+    const sum = document.createElement("summary");
+    const title = document.createElement("span");
+    title.textContent = (i + 1) + ". " + soundLabel(tr.sound);
+    const meta = document.createElement("span"); meta.className = "chanMeta";
+    meta.textContent = soundCategory(tr.sound) + " channel";
+    const dotM = document.createElement("span"); dotM.className = "dotM" + (tr.mute ? " on" : ""); dotM.textContent = "MUTE";
+    const dotS = document.createElement("span"); dotS.className = "dotS" + (tr.solo ? " on" : ""); dotS.textContent = "SOLO";
+    sum.appendChild(title); sum.appendChild(meta); sum.appendChild(dotM); sum.appendChild(dotS);
+    det.appendChild(sum);
+    const body = document.createElement("div"); body.className = "chanBody";
+    const grid = document.createElement("div"); grid.className = "chanGrid";
+    const slider = (label, min, max, val, fmt, fn) => {
+      const ctl = document.createElement("div"); ctl.className = "ctl";
+      const lab = document.createElement("label"); lab.className = "lbl";
+      lab.textContent = label + " ";
+      const vv = document.createElement("span"); vv.className = "val"; vv.textContent = fmt(val);
+      lab.appendChild(vv);
+      const inp = document.createElement("input");
+      inp.type = "range"; inp.min = min; inp.max = max; inp.value = val;
+      inp.addEventListener("input", () => { const v = +inp.value; vv.textContent = fmt(v); fn(v); autosave(); });
+      ctl.appendChild(lab); ctl.appendChild(inp);
+      return ctl;
+    };
+    const node = () => trackNodes.get(tr.id);
+    grid.appendChild(slider("Volume", 0, 100, Math.round(tr.volume * 100),
+      v => v + "%", v => { tr.volume = v / 100; applyChannelToChain(node(), tr); }));
+    grid.appendChild(slider("Pan", -50, 50, Math.round(tr.pan * 50),
+      v => fmtPan(v / 50), v => { tr.pan = v / 50; applyChannelToChain(node(), tr); }));
+    grid.appendChild(slider("Transpose", -12, 12, tr.transpose || 0,
+      v => (v > 0 ? "+" : "") + v + " st", v => { tr.transpose = v; }));
+    grid.appendChild(slider("EQ Low", -50, 50, tr.chan.eqLow,
+      fmtEq, v => { tr.chan.eqLow = v; applyChannelToChain(node(), tr); }));
+    grid.appendChild(slider("EQ Mid", -50, 50, tr.chan.eqMid,
+      fmtEq, v => { tr.chan.eqMid = v; applyChannelToChain(node(), tr); }));
+    grid.appendChild(slider("EQ High", -50, 50, tr.chan.eqHigh,
+      fmtEq, v => { tr.chan.eqHigh = v; applyChannelToChain(node(), tr); }));
+    grid.appendChild(slider("Tone cutoff", 0, 1000, sliderFromCutoff(tr.tone.cutoff),
+      v => Math.round(cutoffFromSlider(v)) + " Hz",
+      v => { tr.tone.cutoff = cutoffFromSlider(v); applyToneToChain(node(), tr); }));
+    grid.appendChild(slider("Tone drive", 0, 100, tr.tone.drive,
+      v => String(v), v => { tr.tone.drive = v; applyToneToChain(node(), tr); }));
+    grid.appendChild(slider("Attack", 10, 400, Math.round(tr.tone.attack * 100),
+      v => (v / 100).toFixed(1) + "×", v => { tr.tone.attack = v / 100; }));
+    grid.appendChild(slider("Decay", 10, 400, Math.round(tr.tone.decay * 100),
+      v => (v / 100).toFixed(1) + "×", v => { tr.tone.decay = v / 100; }));
+    grid.appendChild(slider("Morph amount", 0, 100, tr.morph || 0,
+      v => v + "%", v => { tr.morph = v; }));
+    grid.appendChild(slider("⏱ Delay send", 0, 100, tr.chan.delaySend,
+      v => v + "%", v => { tr.chan.delaySend = v; applyChannelToChain(node(), tr); }));
+    grid.appendChild(slider("🌊 Reverb send", 0, 100, tr.chan.reverbSend,
+      v => v + "%", v => { tr.chan.reverbSend = v; applyChannelToChain(node(), tr); }));
+    body.appendChild(grid);
+    const row = document.createElement("div"); row.className = "rowflex"; row.style.marginTop = "8px";
+    const mLab = document.createElement("label"); mLab.className = "lbl"; mLab.style.margin = "0";
+    mLab.textContent = "Morph into ";
+    const mSel = document.createElement("select");
+    mSel.innerHTML = '<option value="">— none —</option>' + soundOptionsHTML(tr.morphTarget || "");
+    mSel.value = tr.morphTarget || "";
+    mSel.addEventListener("change", () => { tr.morphTarget = mSel.value; autosave(); });
+    mLab.appendChild(mSel);
+    row.appendChild(mLab);
+    const mkBtn = (label, fn) => {
+      const b = document.createElement("button"); b.className = "small"; b.textContent = label;
+      b.addEventListener("click", fn); return b;
+    };
+    const bM = mkBtn(tr.mute ? "🔇 MUTED" : "🔊 MUTE", () => {
+      tr.mute = !tr.mute; bM.textContent = tr.mute ? "🔇 MUTED" : "🔊 MUTE";
+      dotM.className = "dotM" + (tr.mute ? " on" : ""); renderTracks(); autosave();
+    });
+    const bS = mkBtn(tr.solo ? "🎯 SOLO ON" : "🎯 SOLO", () => {
+      tr.solo = !tr.solo; bS.textContent = tr.solo ? "🎯 SOLO ON" : "🎯 SOLO";
+      dotS.className = "dotS" + (tr.solo ? " on" : ""); renderTracks(); autosave();
+    });
+    const bP = mkBtn("▶ PREVIEW", () => {
+      ensureCtx();
+      const n = node();
+      playTrackSound(ctx, n ? n.input : N.seqBus, ctx.currentTime + 0.02, tr, mp3.buffer, soundOpts(tr, 0, stepDur()));
+    });
+    const bR = mkBtn("↺ RESET CHANNEL", () => {
+      tr.chan = defaultChannel(); tr.tone = defaultTone();
+      tr.morph = 0; tr.morphTarget = ""; tr.volume = 0.9; tr.pan = 0; tr.transpose = 0;
+      buildTrackNodes(); renderTracks(); autosave();
+      status("Channel reset: " + soundLabel(tr.sound));
+    });
+    row.appendChild(bM); row.appendChild(bS); row.appendChild(bP); row.appendChild(bR);
+    body.appendChild(row);
+    det.appendChild(body);
+    if (openIds.has(tr.id)) det.open = true;
+    wrap.appendChild(det);
+    stripEls.set(tr.id, { det: det, dotM: dotM, dotS: dotS });
+  });
+}
+function openChannelStrip(tr){
+  labIdx = Math.max(0, tracks.indexOf(tr));
+  refreshTrackLab();
+  const panel = $("mixerPanel");
+  if (panel) panel.classList.remove("closed");
+  const rec = stripEls.get(tr.id);
+  if (rec){
+    rec.det.open = true;
+    rec.det.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
 /* ---------------- state IO ---------------- */
 function currentState(){
-  return { bpm: bpm, swing: swing, fx: Object.assign({}, fx), tracks: tracks };
+  return { bpm: bpm, swing: swing, loopBars: loopBars, fx: Object.assign({}, fx), tracks: tracks };
 }
 function getFxFromUI(){
   fx = { drive: +$("fxDrive").value, crush: +$("fxCrush").value,
     lp: +$("fxLp").value, hp: +$("fxHp").value, pan: +$("fxPan").value,
     master: +$("fxMaster").value, delayTime: +$("fxDelayTime").value,
     delayMix: +$("fxDelayMix").value, reverb: +$("fxReverb").value,
-    deckVol: +$("deckVol").value };
+    deckVol: +$("deckVol").value,
+    gate: +$("fxGate").value, phaser: +$("fxPhaser").value };
   return fx;
 }
 function setFxUI(){
@@ -2738,6 +3424,7 @@ function setFxUI(){
   $("fxMaster").value = fx.master; $("fxDelayTime").value = fx.delayTime;
   $("fxDelayMix").value = fx.delayMix; $("fxReverb").value = fx.reverb;
   $("deckVol").value = fx.deckVol;
+  $("fxGate").value = fx.gate || 0; $("fxPhaser").value = fx.phaser || 0;
   syncFxLabels();
 }
 function syncFxLabels(){
@@ -2751,11 +3438,15 @@ function syncFxLabels(){
   $("fxDelayMixVal").textContent = fx.delayMix + "%";
   $("fxReverbVal").textContent = fx.reverb + "%";
   $("deckVolVal").textContent = fx.deckVol + "%";
+  $("fxGateVal").textContent = (fx.gate || 0) <= 0 ? "off" : fx.gate + "%";
+  $("fxPhaserVal").textContent = (fx.phaser || 0) <= 0 ? "off" : fx.phaser + "%";
   $("bpmVal").textContent = bpm;
   $("swingVal").textContent = swing + "%";
 }
 function applyState(st){
   bpm = st.bpm; swing = st.swing; fx = Object.assign({}, DEFAULT_FX, st.fx);
+  loopBars = sanitizeLoopBars(st.loopBars);
+  updateLoopInfo();
   tracks = st.tracks.map(t => Object.assign({}, t, { id: trackIdSeq++ }));
   $("bpm").value = bpm; $("swing").value = swing;
   setFxUI(); applyFx(); renderTracks();
@@ -2792,9 +3483,11 @@ async function exportWav(){
   comp.threshold.value = -14; comp.ratio.value = 5;
   master.connect(comp); comp.connect(off.destination);
   const gains = new Map();
-  tracks.forEach(tr => gains.set(tr.id, buildToneChain(off, tr, master)));
+  const seqFxOff = buildSeqFxBuses(off, master);
+  tracks.forEach(tr => gains.set(tr.id, buildToneChain(off, tr, master,
+    { delay: seqFxOff.delay, reverb: seqFxOff.reverb })));
   for (let s = 0; s < totalSteps; s++){
-    const ps = s % 64;
+    const ps = s % MAX_STEPS;
     const t = 0.05 + s * sd + (ps % 2 === 1 ? (swing / 100) * sd : 0);
     tracks.forEach(tr => {
       if (!tr.steps[ps] || !trackAudible(tr)) return;
@@ -3275,6 +3968,7 @@ async function grabSampleUrl(){
 
 /* ---------------- wiring ---------------- */
 function wire(){
+  setupFolders();
   $("startBtn").addEventListener("click", () => {
     ensureCtx(); applyFx(); buildTrackNodes();
     $("startOverlay").classList.add("hidden");
@@ -3298,13 +3992,58 @@ function wire(){
   wireDjSettings();
   wireTrackLab();
   /* FX */
-  ["fxDrive","fxCrush","fxLp","fxHp","fxPan","fxMaster","fxDelayTime","fxDelayMix","fxReverb","deckVol"]
+  ["fxDrive","fxCrush","fxLp","fxHp","fxPan","fxMaster","fxDelayTime","fxDelayMix","fxReverb","deckVol","fxGate","fxPhaser"]
     .forEach(id => $(id).addEventListener("input", () => { getFxFromUI(); syncFxLabels(); applyFx(); autosave(); }));
   $("killBtn").addEventListener("click", () => { ensureCtx(); setKill(!killOn); });
   /* sequencer */
   $("seqPlayBtn").addEventListener("click", startSeq);
   $("seqStopBtn").addEventListener("click", stopSeq);
-  $("bpm").addEventListener("input", () => { bpm = +$("bpm").value; syncFxLabels(); autosave(); });
+  $("bpm").addEventListener("input", () => { bpm = +$("bpm").value; syncFxLabels(); if (ctx) applyFx(); autosave(); });
+  /* v2.2: loop length + bar tools */
+  updateLoopInfo();
+  $("loopBarsSel").addEventListener("change", () => {
+    loopBars = sanitizeLoopBars(+$("loopBarsSel").value);
+    if (seq.step >= loopStepsFor(loopBars)) seq.step = 0;
+    updateLoopInfo(); renderTracks(); autosave();
+    status("Loop is now " + loopBars + " bar" + (loopBars > 1 ? "s" : "") +
+      " (" + loopStepsFor(loopBars) + " steps).");
+  });
+  ["barFrom", "barTo", "barClearSel"].forEach(id => {
+    const sel = $(id);
+    for (let b = 0; b < MAX_BARS; b++){
+      const o = document.createElement("option");
+      o.value = b; o.textContent = "Bar " + (b + 1);
+      sel.appendChild(o);
+    }
+  });
+  $("barTo").value = "1";
+  $("copyBarBtn").addEventListener("click", () => {
+    const f = +$("barFrom").value, tt = +$("barTo").value;
+    tracks.forEach(tr => tr.steps = copyBarSteps(tr.steps, f, tt));
+    renderTracks(); autosave();
+    status("Copied bar " + (f + 1) + " into bar " + (tt + 1) + " on every track.");
+  });
+  $("fillLoopBtn").addEventListener("click", () => {
+    tracks.forEach(tr => tr.steps = fillLoopFromBar(tr.steps, 0, loopBars));
+    renderTracks(); autosave();
+    status("Filled the " + loopBars + "-bar loop from bar 1 on every track.");
+  });
+  $("clearBarBtn").addEventListener("click", () => {
+    const b = +$("barClearSel").value;
+    tracks.forEach(tr => tr.steps = clearBarSteps(tr.steps, b));
+    renderTracks(); autosave();
+    status("Cleared bar " + (b + 1) + " on every track.");
+  });
+  /* v2.2: mixer FX return levels (live) */
+  [["mixDelayRet", "mixDelayRetVal", "delayWet"], ["mixReverbRet", "mixReverbRetVal", "revWet"]]
+    .forEach(cfg => {
+      const el = $(cfg[0]); if (!el) return;
+      el.addEventListener("input", () => {
+        $(cfg[1]).textContent = el.value + "%";
+        if (ctx && N.seqFx && N.seqFx[cfg[2]])
+          N.seqFx[cfg[2]].gain.setTargetAtTime(+el.value / 100, ctx.currentTime, 0.03);
+      });
+    });
   $("swing").addEventListener("input", () => { swing = +$("swing").value; syncFxLabels(); autosave(); });
   $("addTrackBtn").addEventListener("click", () => {
     const nt = mkTrack("kick"); nt.id = trackIdSeq++;
@@ -3319,9 +4058,12 @@ function wire(){
     tracks.forEach(tr => {
       const density = tr.sound === "kick" ? 0.30 : tr.sound === "hat" ? 0.34 :
         (tr.sound === "wobble" || tr.sound === "sub") ? 0.16 : 0.20;
-      for (let i = 0; i < 64; i++) tr.steps[i] = Math.random() < density;
-      if (tr.sound === "kick") [0, 16, 32, 48].forEach(i => { if (Math.random() < 0.8) tr.steps[i] = true; });
-      if (tr.sound === "snare" || tr.sound === "clap") [4, 12, 20, 28, 36, 44, 52, 60].forEach(i => { if (Math.random() < 0.6) tr.steps[i] = true; });
+      for (let i = 0; i < MAX_STEPS; i++) tr.steps[i] = Math.random() < density;
+      if (tr.sound === "kick")
+        for (let b = 0; b < MAX_BARS; b++){ if (Math.random() < 0.8) tr.steps[b * 16] = true; }
+      if (tr.sound === "snare" || tr.sound === "clap")
+        for (let b = 0; b < MAX_BARS; b++)
+          [4, 12].forEach(off => { if (Math.random() < 0.6) tr.steps[b * 16 + off] = true; });
     });
     renderTracks(); autosave();
     status("Randomized — hit PLAY and see what the fruit gods gave you. 🎲");

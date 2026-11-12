@@ -32,7 +32,7 @@ Object.keys(FM.PRESETS).forEach(pname => {
   check("preset " + pname + " builds tracks", Array.isArray(trs) && trs.length >= 8);
   trs.forEach(tr => {
     check("preset " + pname + " sound ok: " + tr.sound, !!FM.SOUNDS[tr.sound]);
-    check("preset " + pname + " row is 64 steps (" + tr.sound + ")", tr.steps.length === 64);
+    check("preset " + pname + " row is 128 steps (" + tr.sound + ")", tr.steps.length === 128);
     check("preset " + pname + " row has hits (" + tr.sound + ")", tr.steps.some(Boolean));
   });
 });
@@ -49,7 +49,7 @@ for (let trial = 0; trial < 25; trial++){
   if (trial === 24) check("steps encode/decode round-trip (25 random grids)", true);
 }
 const pat = FM.pattern("x...x...x...x...", "................", "....x.......x...", "................");
-check("pattern() builds 64 steps", pat.length === 64);
+check("pattern() builds 128 steps (8 bars)", pat.length === 128);
 check("pattern() lands hits", pat[0] === true && pat[4] === true && pat[36] === true && pat[1] === false);
 
 /* ---------- project serialize/parse round-trip ---------- */
@@ -62,8 +62,8 @@ stateIn.tracks[0].pan = -0.5; stateIn.tracks[1].mute = true; stateIn.tracks.push
 const json = FM.serializeProject(stateIn);
 const parsed = JSON.parse(json);
 check("project JSON stamps app name", parsed.app === "FruityMcLoops");
-check("project steps stored as 64-char strings",
-  parsed.tracks.every(t => typeof t.steps === "string" && t.steps.length === 64));
+check("project steps stored as 128-char strings",
+  parsed.tracks.every(t => typeof t.steps === "string" && t.steps.length === 128));
 const stateOut = FM.parseProject(json);
 check("project round-trip bpm", stateOut.bpm === 147);
 check("project round-trip swing", stateOut.swing === 12);
@@ -193,7 +193,7 @@ FM.DEMO_SONGS.forEach(d => {
     d.tracks.every(row => !!FM.SOUNDS[row[0]]));
   const st = FM.demoToState(d);
   check("v2 demo builds a full project: " + d.id,
-    !!st && st.tracks.length >= 5 && st.tracks.every(t => t.steps.length === 64));
+    !!st && st.tracks.length >= 5 && st.tracks.every(t => t.steps.length === 128));
   check("v2 demo every row has hits: " + d.id,
     st.tracks.every(t => t.steps.some(Boolean)));
   const back = FM.parseProject(FM.serializeProject(st));
@@ -292,7 +292,7 @@ check("v2.1 scaleContains: Eb in C minor",
   check("v2.1 project round-trip morph fields", o.morph === 65 && o.morphTarget === "wobble");
   check("v2.1 project round-trip tone fields",
     o.tone.cutoff === 1200 && o.tone.resonance === 8 && o.tone.drive === 40 && o.tone.attack === 2 && o.tone.decay === 0.5);
-  check("v2.1 serialize stamps format version 3", JSON.parse(FM.serializeProject(st)).version === 3);
+  check("v2.1 serialize stamps format version 3", JSON.parse(FM.serializeProject(st)).version === 4);
   /* backward compatibility: a v2-format file (no new fields) parses to defaults */
   const v2file = JSON.stringify({ app: "FruityMcLoops", version: 2, bpm: 130, swing: 0,
     fx: FM.DEFAULT_FX, tracks: [{ sound: "kick", steps: "x".repeat(64), volume: 0.9, pan: 0, mute: false, solo: false }] });
@@ -466,7 +466,122 @@ check("v2.1 Android wrapper grants mic to the page",
     .includes("RECORD_AUDIO") &&
   fs.readFileSync(path.join(__dirname, "..", "manual-build", "android", "app", "src", "main", "java", "com", "delukz", "fruitymcloops", "MainActivity.java"), "utf8")
     .includes("onPermissionRequest"));
-check("v2.1 version text present", html.includes("v2.1"));
+check("v2.2 version text present", html.includes("v2.2"));
+
+/* ---------- v2.2: loop bars, bar tools, channel strips, new sounds & FX ---------- */
+check("v2.2 loop bar options are 1/2/3/4/6/8",
+  JSON.stringify(FM.LOOP_BARS_OPTIONS) === JSON.stringify([1, 2, 3, 4, 6, 8]));
+check("v2.2 grid is 8 bars / 128 steps",
+  FM.MAX_BARS === 8 && FM.MAX_STEPS === 128 && FM.STEPS_PER_BAR === 16);
+check("v2.2 sanitizeLoopBars keeps valid, defaults junk to 4",
+  FM.sanitizeLoopBars(1) === 1 && FM.sanitizeLoopBars(8) === 8 &&
+  FM.sanitizeLoopBars(5) === 4 && FM.sanitizeLoopBars(0) === 4 && FM.sanitizeLoopBars("x") === 4);
+check("v2.2 loopStepsFor", FM.loopStepsFor(1) === 16 && FM.loopStepsFor(4) === 64 && FM.loopStepsFor(8) === 128);
+check("v2.2 stepInLoop / barOfStep",
+  FM.stepInLoop(15, 1) === true && FM.stepInLoop(16, 1) === false &&
+  FM.stepInLoop(127, 8) === true && FM.barOfStep(0) === 0 && FM.barOfStep(127) === 7);
+{
+  const base = FM.pattern("x...x...x...x...", "................", "................", "................");
+  const copied = FM.copyBarSteps(base, 0, 3);
+  check("v2.2 copyBarSteps copies bar 1 into bar 4",
+    copied[48] === true && copied[52] === true && copied[49] === false);
+  check("v2.2 copyBarSteps does not mutate the input",
+    base[48] === false && base[0] === true);
+  const cleared = FM.clearBarSteps(copied, 0);
+  check("v2.2 clearBarSteps clears only that bar",
+    cleared[0] === false && cleared[48] === true);
+  const filled = FM.fillLoopFromBar(base, 0, 8);
+  check("v2.2 fillLoopFromBar fills all 8 bars from bar 1",
+    filled[16] === true && filled[112] === true && filled[127] === false);
+  const filled2 = FM.fillLoopFromBar(base, 0, 2);
+  check("v2.2 fillLoopFromBar respects the loop length",
+    filled2[16] === true && filled2[32] === false);
+}
+/* channel strip model */
+{
+  const tr = FM.mkTrack("kick");
+  check("v2.2 mkTrack steps are 128", tr.steps.length === 128);
+  check("v2.2 mkTrack channel defaults are neutral",
+    tr.chan.eqLow === 0 && tr.chan.eqMid === 0 && tr.chan.eqHigh === 0 &&
+    tr.chan.delaySend === 0 && tr.chan.reverbSend === 0);
+  check("v2.2 sanitizeChannel clamps junk",
+    FM.sanitizeChannel({ eqLow: -99 }).eqLow === -50 &&
+    FM.sanitizeChannel({ delaySend: 250 }).delaySend === 100 &&
+    FM.sanitizeChannel(null).reverbSend === 0);
+  tr.chan = { eqLow: -30, eqMid: 12, eqHigh: 40, delaySend: 35, reverbSend: 65 };
+  tr.transpose = 5;
+  const st = { bpm: 140, swing: 0, loopBars: 8, fx: Object.assign({}, FM.DEFAULT_FX), tracks: [tr] };
+  const out = FM.parseProject(FM.serializeProject(st));
+  check("v2.2 project round-trip loopBars", out.loopBars === 8);
+  check("v2.2 project round-trip channel strip",
+    out.tracks[0].chan.eqLow === -30 && out.tracks[0].chan.eqMid === 12 &&
+    out.tracks[0].chan.eqHigh === 40 && out.tracks[0].chan.delaySend === 35 &&
+    out.tracks[0].chan.reverbSend === 65);
+  check("v2.2 serialize stamps format version 4",
+    JSON.parse(FM.serializeProject(st)).version === 4);
+  /* backward compatibility: a v3 file (64-char steps, no loopBars/chan) */
+  const v3file = JSON.stringify({ app: "FruityMcLoops", version: 3, bpm: 130, swing: 0,
+    fx: FM.DEFAULT_FX, tracks: [{ sound: "kick", steps: "x".repeat(64), volume: 0.9, pan: 0, mute: false, solo: false }] });
+  const back = FM.parseProject(v3file);
+  check("v2.2 v3 projects load with loop/channel defaults + padded steps",
+    back.loopBars === 4 && back.tracks[0].steps.length === 128 &&
+    back.tracks[0].steps[0] === true && back.tracks[0].steps[100] === false &&
+    back.tracks[0].chan.delaySend === 0 && back.tracks[0].chan.eqMid === 0);
+}
+/* channel chain: EQ + sends build and update on the stub ctx */
+{
+  const fctx = fakeCtx(), dest = fakeNode();
+  const buses = FM.buildSeqFxBuses(fctx, dest);
+  check("v2.2 buildSeqFxBuses returns delay + reverb inputs",
+    !!buses.delay && !!buses.reverb && !!buses.delayNode && !!buses.conv);
+  const tr = FM.mkTrack("snare");
+  tr.chan.delaySend = 50; tr.chan.reverbSend = 25; tr.chan.eqLow = -50;
+  const chain = FM.buildToneChain(fctx, tr, dest, { delay: buses.delay, reverb: buses.reverb });
+  check("v2.2 buildToneChain exposes EQ + send nodes",
+    !!chain.eqLow && !!chain.eqMid && !!chain.eqHigh && !!chain.delaySend && !!chain.reverbSend);
+  check("v2.2 channel EQ kill reaches the chain",
+    chain.eqLow.gain.value === FM.eqDbFromSlider(-50));
+  tr.chan.delaySend = 80;
+  FM.applyChannelToChain(chain, tr);
+  check("v2.2 applyChannelToChain updates sends live",
+    Math.abs(chain.delaySend.gain.value - 0.8) < 1e-9);
+  check("v2.2 playTrackSound through a channel chain plays",
+    FM.playTrackSound(fctx, chain.input, 0, tr, null, {}) === true);
+  const noSends = FM.buildToneChain(fctx, FM.mkTrack("kick"), dest);
+  check("v2.2 buildToneChain without sends still works",
+    !!noSends.input && noSends.delaySend === null);
+}
+/* new sounds */
+check("v2.2 exactly 30 new sounds in NEW_SOUNDS_V22",
+  Object.keys(FM.NEW_SOUNDS_V22).length === 30,
+  "got " + Object.keys(FM.NEW_SOUNDS_V22).length);
+check("v2.2 total registry >= 105 sounds", FM.SOUND_NAMES.length >= 105, "got " + FM.SOUND_NAMES.length);
+Object.keys(FM.NEW_SOUNDS_V22).forEach(n =>
+  check("v2.2 new sound registered + categorized: " + n,
+    !!FM.SOUNDS[n] && FM.SOUND_CATEGORIES.includes(FM.SOUNDS[n].cat)));
+["Drums", "Bass", "Synths", "Pads", "Keys", "FX"].forEach(c =>
+  check("v2.2 category grew or held (>= 6): " + c,
+    FM.SOUND_NAMES.filter(n => FM.SOUNDS[n].cat === c).length >= 6,
+    "count=" + FM.SOUND_NAMES.filter(n => FM.SOUNDS[n].cat === c).length));
+/* new effects */
+check("v2.2 deck FX registry adds phaser/gate/ringmod/chorus",
+  ["phaser", "gate", "ringmod", "chorus"].every(id => FM.DECK_FX_IDS.includes(id)));
+check("v2.2 master FX defaults include gate + phaser at 0",
+  FM.DEFAULT_FX.gate === 0 && FM.DEFAULT_FX.phaser === 0);
+check("v2.2 master FX UI has gate, phaser + restored deck volume",
+  html.includes('id="fxGate"') && html.includes('id="fxPhaser"') &&
+  html.includes('id="deckVol"') && html.includes('id="deckVolVal"'));
+check("v2.2 loop UI exists (selector, info, bar tools)",
+  html.includes('id="loopBarsSel"') && html.includes('id="loopInfo"') &&
+  html.includes('id="copyBarBtn"') && html.includes('id="fillLoopBtn"') && html.includes('id="clearBarBtn"'));
+check("v2.2 mixer UI exists (strips, returns, folders)",
+  html.includes('id="mixerStrips"') && html.includes("renderMixer") &&
+  html.includes('id="mixDelayRet"') && html.includes('id="mixReverbRet"') &&
+  html.includes("setupFolders") && html.includes('data-fold="closed"') &&
+  html.includes("openChannelStrip") && html.includes('id="jumpNav"') &&
+  html.includes('id="statusBar"'));
+check("v2.2 sequencer schedules against the variable loop",
+  html.includes("loopStepsFor(loopBars)") && html.includes("outLoop"));
 
 console.log("\n" + pass + " passed, " + fail + " failed");
 process.exit(fail ? 1 : 0);

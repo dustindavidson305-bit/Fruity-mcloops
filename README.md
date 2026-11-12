@@ -6,7 +6,14 @@ step sequencer full of synthesized sounds. **v2.0** adds a huge sound
 library, a Downloads page full of demo songs, and a custom-sound slot
 for your own sample libraries. **v2.1** turns it into a 4-deck DJ
 workstation with stem splitting, per-track pitch & scale, morphing,
-and sampling.
+and sampling. **v2.2** is the tidy-up-and-go-deeper release: variable
+**1–8 bar loops** with bar-editing tools, a **mixer with a full
+channel strip for every sound** (EQ, tone, morph, delay/reverb
+sends), **30 new sounds** (105 total), **new effects** (master trance
+gate + phaser, plus phaser/gate/ring-mod/chorus per deck), and the
+whole app reorganized into collapsible folders with a jump nav and a
+sticky status bar. It also restores the deck-bus volume slider that
+v2.1's FX wiring expected but never rendered.
 
 ## What it does
 
@@ -17,8 +24,10 @@ and sampling.
   4 hot cues (quantize-aware, long-press clears), loop in/out +
   1/2/4/8-beat auto-loops, vinyl brake + spinback, and a per-deck FX
   slot (sweep filter, BPM echo, reverb, dubstep wobble with dotted /
-  triplet divisions, bitcrusher, flanger). Crossfader with per-deck
-  L/R assignment and smooth/sharp/cut curves, Play All / Stop All.
+  triplet divisions, bitcrusher, flanger, and — new in v2.2 —
+  phaser, BPM trance gate, ring modulator, chorus). Deck cards fold
+  away (Deck A starts open). Crossfader with per-deck L/R assignment
+  and smooth/sharp/cut curves, Play All / Stop All.
 - **Stem modes per deck** — Full / Instrumental (karaoke) / Vocals
   Only, using the classic center-channel trick (side = L−R, center =
   (L+R)/2) live during playback and scratching, plus a Download Stem
@@ -35,30 +44,43 @@ and sampling.
   a loaded deck into My Sounds.
 - **Record your mix** — capture the master output from the Downloads
   page and download the take.
-- **FX rack** (on the MP3 channel) — distortion, bitcrush, lowpass +
-  highpass filters, stereo pan, feedback delay, reverb, deck volume,
-  master volume, and a big red **KILL SWITCH** that cuts the sound
-  instantly.
-- **Sound library — 75 synthesized sounds, zero samples**, organized in
+- **FX rack** (on the MP3/deck channel) — distortion, bitcrush,
+  lowpass + highpass filters, stereo pan, feedback delay, reverb,
+  deck volume, master volume, plus v2.2's **trance gate** (1/8-note
+  chops at the sequencer BPM) and **4-stage phaser**, and a big red
+  **KILL SWITCH** that cuts the sound instantly.
+- **Mixer — channel strips (v2.2)** — one collapsible strip per
+  sequencer track: volume, pan, transpose, 3-band EQ (with kill),
+  tone cutoff + drive, attack/decay, morph amount + target, mute /
+  solo, preview, reset, and per-channel **delay & reverb sends**
+  feeding shared return buses (with their own return levels in the
+  Mixer panel). The CH button on any track row jumps to its strip.
+  All of it is live while playing and saves into project files.
+- **Sound library — 105 synthesized sounds, zero samples**, organized in
   categories with a category filter and tap-to-preview:
-  - **Drums (23)** — kicks (deep, hard, electro), snares, clap, hats,
-    shaker, tambourine, cowbell, conga, bongo, toms, rimshot, stick,
-    woodblock, crash, zap…
-  - **Bass (12)** — 808, sub, dubstep wobble, acid 303, FM bass, reese,
-    growl, pluck bass, rubber bass, octave bass…
-  - **Synths (14)** — stab, pluck, supersaw, square/saw/PWM/trance
-    leads, arp synth, chiptune, FM bell, e-piano, organ, hoover…
-  - **Pads (6)** — warm, dark, strings, choir, shimmer, space.
-  - **Keys (7)** — music box, marimba, kalimba, guitar pluck, harp,
-    vibraphone, toy piano.
-  - **FX (13)** — laser, riser, downlifter, impact, siren, vinyl
-    crackle, sweeps, blips, coin, alarm, reverse cymbal, UFO…
+  - **Drums (29)** — kicks (deep, hard, electro, trap, lo-fi), snares,
+    brush snare, clap + clap stack, hats, shaker, tambourine, cowbell,
+    conga, bongo, toms, rimshot, china crash, zap…
+  - **Bass (17)** — 808, sub, dubstep wobble, acid 303, FM bass, reese,
+    growl, neuro, donk, bounce, vintage, hoover bass…
+  - **Synths (20)** — stab, pluck, supersaw, rave/formant/glide leads,
+    theremin, glass arp, super pluck, trance leads, chiptune, organ…
+  - **Pads (10)** — warm, dark, strings, choir, shimmer, space, aurora,
+    cassette, void, stargazer.
+  - **Keys (11)** — music box, marimba, kalimba, guitar pluck, harp,
+    vibraphone, toy piano, felt piano, glass keys, celesta, dulcimer.
+  - **FX (18)** — laser, riser, downlifter, impact, siren, vinyl
+    crackle, sweeps, sub drop, reverse hit, glitch burst, wind…
   - …plus **your own custom sounds** (below).
-- **Step sequencer** — 64 steps (4 bars × 16), unlimited tracks (add as
-  many rows as you like), tick-box grid, per-track sound (grouped by
-  category, including your custom sounds)/volume/pan/mute/solo,
-  BPM 60–200, swing, techno & dubstep presets, randomize. Any track can
-  also be an **MP3 one-shot** that fires your loaded MP3.
+- **Step sequencer** — a 128-step grid (8 bars × 16) with a **loop
+  length selector (1, 2, 3, 4, 6 or 8 bars)**: steps past the loop end
+  stay saved, just dimmed, so you can stretch the loop any time. **Bar
+  tools** copy a bar to another bar, fill the whole loop from bar 1,
+  or clear a bar — across all tracks at once. Unlimited tracks,
+  tick-box grid, per-track sound (grouped by category, including your
+  custom sounds)/volume/pan/mute/solo + a CH button into the mixer,
+  BPM 60–200, swing, techno & dubstep presets, randomize. Any track
+  can also be an **MP3 one-shot** that fires your loaded MP3.
 - **⬇ Downloads page** — 6 built-in demo songs (Berlin 4AM techno,
   Wobble Town dubstep, Sunset Groove house, Boom Bap Breakfast hip-hop,
   Jungle Juice drum & bass, Weightless ambient). Each one can be
@@ -75,8 +97,13 @@ and sampling.
   note (they're note files, not audio); undecodable files are reported,
   never crash the import.
 - **Save & export** — save/load projects as JSON (autosaves locally
-  too), and export your loop as a **WAV** file (1–8 bars). The MP3 file
-  itself is not stored inside a project file.
+  too; the v4 format adds loop length + channel strips, and v2/v3
+  project files still load, with their 4-bar patterns intact), and
+  export your loop as a **WAV** file (1–8 bars). The MP3 file itself
+  is not stored inside a project file.
+- **Layout (v2.2)** — every section is a collapsible folder (tap its
+  title), there's a jump nav under the header, and status messages
+  live in a sticky bar at the top so they're never buried.
 
 ## Get it
 
@@ -106,8 +133,9 @@ works fully offline.
 ## Tests
 
 ```sh
-node tests/smoke.js   # 322 checks: synth registry (75 sounds, all categorized),
-                      # demo songs, custom-import surface, grid model, WAV encoder…
+node tests/smoke.js   # 544 checks: synth registry (105 sounds, all categorized),
+                      # demo songs, custom-import surface, grid + loop model,
+                      # channel strips, WAV encoder…
 ```
 
 ## License
