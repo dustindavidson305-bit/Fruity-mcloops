@@ -583,5 +583,112 @@ check("v2.2 mixer UI exists (strips, returns, folders)",
 check("v2.2 sequencer schedules against the variable loop",
   html.includes("loopStepsFor(loopBars)") && html.includes("outLoop"));
 
+/* ---------- v2.3: per-step melodic notes ---------- */
+check("v2.3 melody patterns exist (7 incl. off)",
+  FM.MELODY_PATTERN_NAMES.length === 7 && FM.MELODY_PATTERN_NAMES.includes("rise") &&
+  FM.MELODY_PATTERN_NAMES.includes("walk"));
+{
+  const tr = FM.mkTrack("supersawlead", FM.pattern(
+    "x...x...x...x...", "................", "................", "................"));
+  check("v2.3 new track starts with all-zero notes + melody off",
+    tr.notes.length === 128 && tr.notes.every(n => n === 0) && tr.melody === "off");
+  check("v2.3 degree 0 keeps the old track-root pitch",
+    Math.abs(FM.stepPitchFactor(tr, 0) - FM.trackPitchFactor(tr)) < 1e-9 &&
+    Math.abs(FM.stepRootFreq(tr, 0) - FM.trackRootFreq(tr)) < 1e-9);
+  check("v2.3 degree 7 in major is one octave up (pitch factor 2)",
+    Math.abs(FM.stepPitchFactor(Object.assign(FM.mkTrack("supersawlead"), {
+      notes: (() => { const n = FM.defaultNotes(); n[0] = 7; return n; })()
+    }), 0) - 2) < 1e-9);
+  const rise = FM.applyMelodyPattern(tr, "rise");
+  check("v2.3 rise stamps 0,1,2,3… on active steps only",
+    rise[0] === 0 && rise[4] === 1 && rise[8] === 2 && rise[12] === 3 &&
+    rise[1] === 0 && rise[5] === 0);
+  const fall = FM.applyMelodyPattern(tr, "fall");
+  check("v2.3 fall stamps descending degrees",
+    fall[0] === 3 && fall[4] === 2 && fall[8] === 1 && fall[12] === 0);
+  const arp = FM.applyMelodyPattern(tr, "arp");
+  check("v2.3 arp cycles chord tones 0,2,4,7",
+    arp[0] === 0 && arp[4] === 2 && arp[8] === 4 && arp[12] === 7);
+  const updown = FM.applyMelodyPattern(tr, "updown");
+  check("v2.3 updown climbs then falls",
+    updown[0] === 0 && updown[4] === 1 && updown[8] === 1 && updown[12] === 0);
+  const r1 = FM.applyMelodyPattern(tr, "random"), r2 = FM.applyMelodyPattern(tr, "random");
+  check("v2.3 random is deterministic (same steps → same notes)",
+    JSON.stringify(r1) === JSON.stringify(r2) && [0, 4, 8, 12].some(s => r1[s] !== 0));
+  const w = FM.applyMelodyPattern(tr, "walk");
+  check("v2.3 walk moves by at most one degree per step",
+    [0, 4, 8, 12].every((s, i, a) => i === 0 || Math.abs(w[s] - w[a[i - 1]]) <= 1));
+  check("v2.3 off pattern returns all-zero notes",
+    FM.applyMelodyPattern(tr, "off").every(n => n === 0));
+  check("v2.3 unknown pattern returns all-zero notes",
+    FM.applyMelodyPattern(tr, "nope").every(n => n === 0));
+  check("v2.3 notes sanitize clamps + pads to 128",
+    FM.sanitizeNotes([0, 99, -99, "x"]).length === 128 &&
+    FM.sanitizeNotes([0, 99, -99, "x"])[1] === 14 &&
+    FM.sanitizeNotes([0, 99, -99, "x"])[2] === -14);
+  check("v2.3 notes sparse pairs round-trip",
+    JSON.stringify(FM.pairsToNotes(FM.notesToPairs(rise))) === JSON.stringify(rise));
+  const mel = FM.mkTrack("fm808");
+  mel.melody = "rise"; mel.notes = FM.applyMelodyPattern(mel, "rise");
+  const st = { bpm: 120, swing: 0, loopBars: 4, fx: Object.assign({}, FM.DEFAULT_FX), tracks: [mel, FM.mkTrack("kick")] };
+  const back = FM.parseProject(FM.serializeProject(st));
+  check("v2.3 melody + notes survive project round-trip",
+    back.tracks[0].melody === "rise" &&
+    JSON.stringify(back.tracks[0].notes) === JSON.stringify(mel.notes));
+  check("v2.3 old project without notes loads with zero notes",
+    FM.parseProject(JSON.stringify({ app: "FruityMcLoops", version: 4, bpm: 120, swing: 0,
+      loopBars: 4, fx: FM.DEFAULT_FX,
+      tracks: [{ sound: "kick", steps: "x".padEnd(128, ".") }] }))
+      .tracks[0].notes.every(n => n === 0));
+  const fctx = fakeCtx(), dest = fakeNode();
+  check("v2.3 melodic step plays through the channel chain",
+    FM.playTrackSound(fctx, dest, 0, mel, null, { pitchFactor: FM.stepPitchFactor(mel, 0) }) === true);
+}
+check("v2.3 demo songs >= 8", FM.DEMO_SONGS.length >= 8, "got " + FM.DEMO_SONGS.length);
+check("v2.3 demo genres >= 7 distinct",
+  new Set(FM.DEMO_SONGS.map(d => d.genre)).size >= 7);
+{
+  const neon = FM.DEMO_SONGS.find(d => d.id === "neon-skyline");
+  const garage = FM.DEMO_SONGS.find(d => d.id === "garage-door");
+  check("v2.3 new demos exist", !!neon && !!garage);
+  const neonState = FM.demoToState(neon);
+  const lead = neonState.tracks.find(t => t.sound === "supersawlead");
+  check("v2.3 demo melody stamps notes on the lead track",
+    !!lead && lead.melody === "rise" && lead.notes.some(n => n !== 0));
+  const garageState = FM.demoToState(garage);
+  const arpTr = garageState.tracks.find(t => t.sound === "squarearp");
+  check("v2.3 demo melody stamps notes on the garage arp track",
+    !!arpTr && arpTr.melody === "updown" && arpTr.notes.some(n => n !== 0));
+  const back = FM.parseProject(FM.serializeProject(neonState));
+  check("v2.3 demo melody survives project round-trip",
+    back.tracks.find(t => t.sound === "supersawlead").notes.some(n => n !== 0));
+}
+check("v2.3 melody UI exists (per-track dropdown, degree badges, explainer)",
+  html.includes("melSel") && html.includes("applyMelodyPattern") &&
+  html.includes("noteAtStep") && html.includes("Melody (v2.3)") &&
+  html.includes("cell.mel"));
+check("v2.3 sequencer passes per-step pitch into playback",
+  html.includes("stepPitchFactor(tr, step)") && html.includes("stepRootFreq(tr, step)"));
+
+/* ---------- v2.3: 12 new sounds ---------- */
+check("v2.3 exactly 12 new sounds in NEW_SOUNDS_V23",
+  Object.keys(FM.NEW_SOUNDS_V23).length === 12,
+  "got " + Object.keys(FM.NEW_SOUNDS_V23).length);
+check("v2.3 total registry >= 117 sounds", FM.SOUND_NAMES.length >= 117, "got " + FM.SOUND_NAMES.length);
+Object.keys(FM.NEW_SOUNDS_V23).forEach(n =>
+  check("v2.3 new sound registered + categorized: " + n,
+    !!FM.SOUNDS[n] && FM.SOUND_CATEGORIES.includes(FM.SOUNDS[n].cat)));
+{
+  const fctx = fakeCtx(), dest = fakeNode();
+  Object.keys(FM.NEW_SOUNDS_V23).forEach(n => {
+    let ok = false;
+    try { FM.SOUNDS[n].play(fctx, dest, 0.25, { dur: 0.4, rate: 8, pitch: 1, freq: 520 }); ok = true; }
+    catch (e) { ok = false; }
+    check("v2.3 new sound runs on stub ctx: " + n, ok);
+  });
+}
+check("v2.3 in-app version text is 2.3",
+  html.includes("v2.3") && html.includes("117 built-in sounds"));
+
 console.log("\n" + pass + " passed, " + fail + " failed");
 process.exit(fail ? 1 : 0);

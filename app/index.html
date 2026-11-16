@@ -101,6 +101,7 @@ label.lbl{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1
 .cell.alt{background:#23233d;}
 .cell.barStart{margin-left:9px;}
 .cell.on{background:var(--orange);border-color:#ffb35c;box-shadow:0 0 9px rgba(255,140,26,.75);}
+.cell.mel{color:#ffd166;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;}
 .cell.now{outline:2px solid var(--cyan);outline-offset:-1px;}
 .cell.on.now{outline-color:#fff;}
 .ruler{display:flex;align-items:stretch;margin-bottom:5px;}
@@ -218,7 +219,7 @@ details.chanStrip .chanBody{padding:4px 12px 12px;border-top:1px solid var(--lin
 </div>
 
 <h1>🍊 <span class="fm1">FRUITY</span> <span class="fm2">McLOOPS</span></h1>
-<div class="tagline">4-deck DJ workstation • scratch • step sequencer • mixer • dubstep machine • v2.2</div>
+<div class="tagline">4-deck DJ workstation • scratch • step sequencer • mixer • dubstep machine • v2.3</div>
 <nav id="jumpNav">
   <a href="#deckPanel">🎧 Decks</a><a href="#fxPanel">🎛️ FX Rack</a><a href="#libPanel">🎹 Library</a>
   <a href="#mySoundsPanel">🎧 My Sounds</a><a href="#labPanel">🎚️ Track Lab</a>
@@ -447,6 +448,7 @@ details.chanStrip .chanBody{padding:4px 12px 12px;border-top:1px solid var(--lin
       </select></label>
     <span id="loopInfo" class="tabnote">Loop: 4 bars • 64 steps</span>
     <span class="note">The grid holds 8 bars (128 steps). Steps past the loop end stay saved, just dimmed — stretch the loop any time and they're still there.</span>
+    <span class="note">🎵 <b>Melody (v2.3):</b> each track has a 🎵 dropdown — pick Rise, Arp, Walk… and its steps play different notes from the track's key &amp; scale instead of one pitch. The number on a step is its scale degree (+3 = three steps up the scale).</span>
   </div>
   <details class="barTools">
     <summary>🧰 Bar tools — copy, fill &amp; clear bars (all tracks at once)</summary>
@@ -507,7 +509,7 @@ details.chanStrip .chanBody{padding:4px 12px 12px;border-top:1px solid var(--lin
   </div>
 </div>
 
-<div class="note" style="text-align:center;">Fruity McLoops v2.2 — 105 built-in sounds synthesized live, 1–8 bar loops, a channel strip for every sound, 4 DJ decks with stems, plus your own custom sounds. No samples were harmed. 🍊</div>
+<div class="note" style="text-align:center;">Fruity McLoops v2.3 — 117 built-in sounds synthesized live, 1–8 bar loops, a channel strip for every sound, per-step melodic notes from each track's scale, 4 DJ decks with stems, plus your own custom sounds. No samples were harmed. 🍊</div>
 
 <!-- ================= DOWNLOADS ================= -->
 <div class="panel" id="dlPanel" data-fold="closed">
@@ -1399,6 +1401,67 @@ const NEW_SOUNDS_V22 = {
   }}
 };
 Object.assign(SOUNDS, NEW_SOUNDS_V22);
+
+/* ============================================================
+   v2.3 EXPANSION — 12 more synthesized sounds (zero samples).
+   ============================================================ */
+const NEW_SOUNDS_V23 = {
+  /* ----- Drums ----- */
+  punchkick: { label: "Punch Kick", cat: "Drums", play(ctx, out, t){
+    _tone(ctx, out, t, { f0: 170, f1: 40, ft: 0.09, dur: 0.42, peak: 1.0 });
+    _noise(ctx, out, t, { type: "highpass", freq: 4000, dur: 0.02, peak: 0.3 });
+  }},
+  sidestick: { label: "Side Stick", cat: "Drums", play(ctx, out, t){
+    _tone(ctx, out, t, { type: "triangle", f0: 1900, dur: 0.05, peak: 0.5 });
+    _noise(ctx, out, t, { type: "bandpass", freq: 2200, q: 6, dur: 0.06, peak: 0.4 });
+  }},
+  agogo: { label: "Agogo Bells", cat: "Drums", play(ctx, out, t, o){
+    const f = ((o && o.freq) || 740);
+    _tone(ctx, out, t, { type: "sine", f0: f, dur: 0.22, peak: 0.5 });
+    _tone(ctx, out, t, { type: "sine", f0: f * 1.335, dur: 0.3, peak: 0.35 });
+  }},
+  /* ----- Bass ----- */
+  fm808: { label: "FM 808", cat: "Bass", play(ctx, out, t, o){
+    _fm(ctx, out, t, { freq: (o && o.freq) || 55, ratio: 2, index: 8, dur: 0.7, peak: 0.7 });
+  }},
+  supersawbass: { label: "Supersaw Bass", cat: "Bass", play(ctx, out, t, o){
+    const f = ((o && o.freq) || 55);
+    _chord(ctx, out, t, { freqs: [f, f * 1.01, f * 2.02], type: "sawtooth", dur: 0.5, peak: 0.3, a: 0.02, lp: 900, detune: 12 });
+  }},
+  subboom: { label: "Sub Boom", cat: "Bass", play(ctx, out, t){
+    _tone(ctx, out, t, { f0: 120, f1: 28, ft: 0.5, dur: 1.0, peak: 0.9 });
+  }},
+  /* ----- Synths ----- */
+  squarearp: { label: "Square Arp", cat: "Synths", play(ctx, out, t, o){
+    const f = (o && o.freq) || 880;
+    _tone(ctx, out, t, { type: "square", f0: f, dur: 0.1, peak: 0.22, lp: 5200 });
+    _tone(ctx, out, t, { type: "square", f0: f * 1.5, dur: 0.08, peak: 0.12, lp: 5200 });
+  }},
+  supersawlead: { label: "Supersaw Lead", cat: "Synths", play(ctx, out, t, o){
+    const f = (o && o.freq) || 660;
+    _chord(ctx, out, t, { freqs: [f, f * 1.005, f * 2.01], type: "sawtooth", dur: 0.34, peak: 0.28, a: 0.02, lp: 4200, detune: 10 });
+  }},
+  /* ----- Keys ----- */
+  rhodes: { label: "Rhodes Keys", cat: "Keys", play(ctx, out, t, o){
+    const f = (o && o.freq) || 330;
+    _tone(ctx, out, t, { type: "sine", f0: f, dur: 0.9, peak: 0.5 });
+    _tone(ctx, out, t, { type: "sine", f0: f * 2, dur: 0.5, peak: 0.18 });
+    _tone(ctx, out, t, { type: "triangle", f0: f * 4.02, dur: 0.12, peak: 0.06 });
+  }},
+  dreamkeys: { label: "Dream Keys", cat: "Keys", play(ctx, out, t, o){
+    const f = (o && o.freq) || 440;
+    _chord(ctx, out, t, { freqs: [f, f * 1.26, f * 1.5], type: "triangle", dur: 0.9, peak: 0.25, a: 0.05, lp: 3200 });
+  }},
+  /* ----- FX ----- */
+  airhorn: { label: "Airhorn", cat: "FX", play(ctx, out, t){
+    _chord(ctx, out, t, { freqs: [233, 294, 370], type: "sawtooth", dur: 0.7, peak: 0.3, a: 0.03, lp: 3200 });
+  }},
+  alarmfx: { label: "Alarm", cat: "FX", play(ctx, out, t){
+    _tone(ctx, out, t, { type: "square", f0: 880, dur: 0.18, peak: 0.25 });
+    _tone(ctx, out, t + 0.22, { type: "square", f0: 660, dur: 0.18, peak: 0.25 });
+  }}
+};
+Object.assign(SOUNDS, NEW_SOUNDS_V23);
 const SOUND_CATEGORIES = ["Drums", "Bass", "Synths", "Pads", "Keys", "FX", "Custom"];
 function soundCategory(name){
   if (typeof name === "string" && name.indexOf("custom:") === 0) return "Custom";
@@ -1497,16 +1560,48 @@ const DEMO_SONGS = [
     ["fmbell",     "..x.............", "................", "..x.............", "................"],
     ["shimmerpad", "................", "x...............", "................", "................"],
     ["downlifter", "................", "................", "................", "x..............."]
+  ]},
+  { id: "neon-skyline", name: "Neon Skyline", genre: "Synthwave", bpm: 102, swing: 0,
+    melodies: { supersawlead: "rise", dreamkeys: "arp" }, tracks: [
+    ["punchkick",   "x...x...x...x...", "x...x...x...x...", "x...x...x...x...", "x...x...x...x..x"],
+    ["sidestick",   "....x.......x...", "....x.......x...", "....x.......x...", "....x.......x.x."],
+    ["hat",         "..x...x...x...x.", "..x...x...x...x.", "..x...x...x...x.", "..x...x...x...xx"],
+    ["fm808",       "x.......x.......", "x.......x.......", "x.......x.......", "x.......x...x..."],
+    ["supersawlead","..x.......x.....", "................", "..x.......x.....", "..x.......x....."],
+    ["dreamkeys",   "x...............", "................", "x...............", "................"],
+    ["agogo",       "................", "......x.........", "................", "......x........."],
+    ["subboom",     "................", "................", "................", "x..............."]
+  ]},
+  { id: "garage-door", name: "Garage Door", genre: "UK Garage", bpm: 130, swing: 8,
+    melodies: { squarearp: "updown" }, tracks: [
+    ["punchkick", "x.....x...x.....", "x.....x...x.....", "x.....x...x.....", "x.....x...x...x."],
+    ["sidestick", "....x.......x...", "....x.......x...", "....x.......x...", "....x.......x.xx"],
+    ["hat",       "x.xx.xxxx.xx.xx.", "x.xx.xxxx.xx.xx.", "x.xx.xxxx.xx.xx.", "x.xx.xxxx.xx.xxx"],
+    ["subboom",   "x...............", "................", "x...............", "..........x....."],
+    ["squarearp", "..x...x...x...x.", "..x...x...x...x.", "..x...x...x...x.", "..x...x...x...x."],
+    ["rhodes",    "....x.......x...", "................", "....x.......x...", "................"],
+    ["agogo",     "................", "..x.............", "................", "..x............."]
   ]}
 ];
 function demoToState(demo){
   if (!demo) return null;
+  const tracks = demo.tracks.filter(row => SOUNDS[row[0]]).map(row =>
+    mkTrack(row[0], pattern(row[1], row[2], row[3], row[4])));
+  /* v2.3: demos can carry per-track melody patterns, keyed by sound */
+  if (demo.melodies){
+    tracks.forEach(tr => {
+      const pat = demo.melodies[tr.sound];
+      if (pat && MELODY_PATTERNS[pat] && pat !== "off"){
+        tr.melody = pat;
+        tr.notes = applyMelodyPattern(tr, pat);
+      }
+    });
+  }
   return {
     bpm: clamp(demo.bpm || 120, 60, 200), swing: clamp(demo.swing || 0, 0, 50),
     loopBars: 4,
     fx: Object.assign({}, DEFAULT_FX),
-    tracks: demo.tracks.filter(row => SOUNDS[row[0]]).map(row =>
-      mkTrack(row[0], pattern(row[1], row[2], row[3], row[4])))
+    tracks: tracks
   };
 }
 
@@ -1662,7 +1757,8 @@ const DEFAULT_FX = { drive:0, crush:0, lp:1000, hp:0, pan:0, master:90,
 function mkTrack(sound, steps){
   const t = { sound: sound, steps: steps || new Array(MAX_STEPS).fill(false),
     volume: 0.9, pan: 0, mute: false, solo: false,
-    morph: 0, morphTarget: "", tone: defaultTone(), chan: defaultChannel() };
+    morph: 0, morphTarget: "", tone: defaultTone(), chan: defaultChannel(),
+    notes: defaultNotes(), melody: "off" };
   if (t.steps.length < MAX_STEPS)
     t.steps = t.steps.concat(new Array(MAX_STEPS - t.steps.length).fill(false));
   return Object.assign(t, defaultTrackPitch());
@@ -1687,6 +1783,8 @@ function serializeProject(state){
         octave: p.octave, transpose: p.transpose,
         morph: clamp(Math.round(t.morph || 0), 0, 100),
         morphTarget: (typeof t.morphTarget === "string") ? t.morphTarget : "",
+        melody: (typeof t.melody === "string" && MELODY_PATTERNS[t.melody]) ? t.melody : "off",
+        notes: notesToPairs(t.notes),
         tone: tn
       };
     })
@@ -1711,6 +1809,8 @@ function parseProject(json){
       morph: clamp(Math.round(t.morph || 0), 0, 100),
       morphTarget: (typeof t.morphTarget === "string" &&
         (SOUNDS[t.morphTarget] || t.morphTarget === MP3_SOUND || t.morphTarget.indexOf("custom:") === 0)) ? t.morphTarget : "",
+      melody: (typeof t.melody === "string" && MELODY_PATTERNS[t.melody]) ? t.melody : "off",
+      notes: pairsToNotes(t.notes),
       tone: sanitizeTone(t.tone)
     }, sanitizeTrackPitch(t)))
   };
@@ -1807,6 +1907,113 @@ function trackRootFreq(tr){
 function trackPitchFactor(tr){
   /* relative to the default root (MIDI 48), clamped to a sane range */
   return clamp(trackRootFreq(tr) / noteToFreq(48), 0.25, 4);
+}
+/* ============================================================
+   v2.3 — PER-STEP MELODIC NOTES.
+   Every track carries notes[128]: scale degrees per step, 0 = the
+   track root pitch (exactly the v2.2 behaviour). Melody patterns
+   stamp degrees onto the track's active steps, so a bass or lead
+   line can walk up the track's key/scale instead of thudding on
+   one note. Degrees are scale degrees, not semitones: degree 7 in
+   major is the octave, degree -1 is one scale step below the root.
+   ============================================================ */
+const MELODY_PATTERNS = {
+  off:    { label: "Off — root pitch" },
+  rise:   { label: "Rise — climb the scale" },
+  fall:   { label: "Fall — descend the scale" },
+  updown: { label: "Up & Down — climb then fall" },
+  arp:    { label: "Arp — chord tones 1·3·5·8" },
+  random: { label: "Random — seeded dice" },
+  walk:   { label: "Walk — random walk" }
+};
+const MELODY_PATTERN_NAMES = Object.keys(MELODY_PATTERNS);
+function defaultNotes(){ return new Array(MAX_STEPS).fill(0); }
+function sanitizeNotes(notes){
+  const out = defaultNotes();
+  if (!Array.isArray(notes)) return out;
+  for (let i = 0; i < Math.min(notes.length, MAX_STEPS); i++){
+    const d = Math.round(+notes[i]);
+    out[i] = isFinite(d) ? clamp(d, -14, 14) : 0;
+  }
+  return out;
+}
+function noteAtStep(tr, step){
+  if (!tr || !Array.isArray(tr.notes)) return 0;
+  return clamp(Math.round(+tr.notes[step] || 0), -14, 14);
+}
+/* frequency of the note a step actually plays, from the track's
+   key / scale / root. Degree 0 reproduces trackRootFreq exactly. */
+function stepRootFreq(tr, step){
+  const p = sanitizeTrackPitch(tr);
+  return scaleDegreeFreq(p.rootNote + p.transpose, p.scale, noteAtStep(tr, step))
+    * Math.pow(2, p.octave);
+}
+function stepPitchFactor(tr, step){
+  return clamp(stepRootFreq(tr, step) / noteToFreq(48), 0.25, 4);
+}
+function _melodyRng(seed){
+  let a = (seed >>> 0) || 1;
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+/* Stamp a melody pattern onto a track's active steps. Pure and
+   deterministic: same steps + pattern always give the same notes. */
+function applyMelodyPattern(tr, pattern, seed){
+  const notes = defaultNotes();
+  if (!tr || !Array.isArray(tr.steps)) return notes;
+  if (!MELODY_PATTERNS[pattern] || pattern === "off") return notes;
+  const act = [];
+  for (let i = 0; i < MAX_STEPS; i++) if (tr.steps[i]) act.push(i);
+  if (!act.length) return notes;
+  const n = act.length;
+  const ivLen = scaleIntervals(sanitizeTrackPitch(tr).scale).length;
+  if (seed == null) seed = act.reduce((a, s) => (a * 31 + s + 7) | 0, 11);
+  const rng = _melodyRng(seed);
+  const chord = [0, 2, 4, 7];
+  let walkDeg = 0;
+  act.forEach((step, i) => {
+    let d = 0;
+    if (pattern === "rise") d = i;
+    else if (pattern === "fall") d = (n - 1) - i;
+    else if (pattern === "updown"){
+      const half = Math.ceil(n / 2);
+      d = (i < half) ? i : (n - 1) - i;
+    }
+    else if (pattern === "arp") d = chord[i % chord.length];
+    else if (pattern === "random") d = Math.floor(rng() * ivLen);
+    else if (pattern === "walk"){
+      if (i > 0) walkDeg += (rng() < 0.5 ? -1 : 1);
+      walkDeg = clamp(walkDeg, 0, ivLen);
+      d = walkDeg;
+    }
+    notes[step] = clamp(d, -14, 14);
+  });
+  return notes;
+}
+/* sparse pairs for project files: only non-zero notes are stored */
+function notesToPairs(notes){
+  const out = [];
+  if (!Array.isArray(notes)) return out;
+  for (let i = 0; i < Math.min(notes.length, MAX_STEPS); i++){
+    const d = Math.round(+notes[i] || 0);
+    if (d) out.push([i, d]);
+  }
+  return out;
+}
+function pairsToNotes(pairs){
+  const notes = defaultNotes();
+  if (!Array.isArray(pairs)) return notes;
+  pairs.forEach(p => {
+    if (!Array.isArray(p) || p.length < 2) return;
+    const s = Math.round(+p[0]), d = Math.round(+p[1]);
+    if (isFinite(s) && isFinite(d) && s >= 0 && s < MAX_STEPS)
+      notes[s] = clamp(d, -14, 14);
+  });
+  return notes;
 }
 /* Per-track tone shaping defaults: neutral = sound passes unchanged. */
 function defaultTone(){
@@ -2109,10 +2316,13 @@ if (typeof module !== "undefined" && module.exports){
     scaleContains, scaleDegreeFreq, defaultTrackPitch, sanitizeTrackPitch,
     trackRootFreq, trackPitchFactor, defaultTone, sanitizeTone,
     buildToneChain, applyToneToChain, playTrackSound,
+    MELODY_PATTERNS, MELODY_PATTERN_NAMES, defaultNotes, sanitizeNotes,
+    noteAtStep, stepRootFreq, stepPitchFactor, applyMelodyPattern,
+    notesToPairs, pairsToNotes,
     LOOP_BARS_OPTIONS, MAX_BARS, STEPS_PER_BAR, MAX_STEPS, sanitizeLoopBars,
     loopStepsFor, barOfStep, stepInLoop, copyBarSteps, clearBarSteps,
     fillLoopFromBar, defaultChannel, sanitizeChannel, applyChannelToChain,
-    buildSeqFxBuses, NEW_SOUNDS_V22,
+    buildSeqFxBuses, NEW_SOUNDS_V22, NEW_SOUNDS_V23,
     STEM_MODES, stemGains, stemSample, buildStemChain,
     DECK_LETTERS, crossfaderGain, syncRate,
     DJ_SETTINGS_KEY, DEFAULT_DJ_SETTINGS, sanitizeDJSettings,
@@ -3084,8 +3294,9 @@ function soundOpts(tr, step, sd){
   const cat = soundCategory(tr.sound);
   if (cat === "Pads") o.dur = sd * 3.8;
   else if ((cat === "Bass" || cat === "Synths" || cat === "Keys") && o.dur == null) o.dur = sd * 0.95;
-  o.pitchFactor = trackPitchFactor(tr);
-  o.freq = trackRootFreq(tr);
+  /* v2.3: per-step melodic notes — degree 0 is the old track-root pitch */
+  o.pitchFactor = stepPitchFactor(tr, step);
+  o.freq = stepRootFreq(tr, step);
   return o;
 }
 function trackAudible(tr){
@@ -3205,6 +3416,22 @@ function trackRowEl(tr){
   sel.innerHTML = soundOptionsHTML(tr.sound);
   sel.addEventListener("change", () => { tr.sound = sel.value; renderMixer(); autosave(); });
   head.appendChild(sel);
+  /* v2.3: per-step melody pattern for this track */
+  const melSel = document.createElement("select");
+  melSel.className = "melSel";
+  melSel.title = "Melody (v2.3) — per-step notes from this track's key & scale";
+  MELODY_PATTERN_NAMES.forEach(p => {
+    const o = document.createElement("option");
+    o.value = p; o.textContent = "🎵 " + MELODY_PATTERNS[p].label;
+    if (p === (tr.melody || "off")) o.selected = true;
+    melSel.appendChild(o);
+  });
+  melSel.addEventListener("change", () => {
+    tr.melody = melSel.value;
+    tr.notes = applyMelodyPattern(tr, tr.melody);
+    renderTracks(); autosave();
+  });
+  head.appendChild(melSel);
   const mkSlider = (label, min, max, val, fn) => {
     const d = document.createElement("div"); d.className = "mini";
     const s = document.createElement("span"); s.textContent = label;
@@ -3237,8 +3464,8 @@ function trackRowEl(tr){
   const bC = document.createElement("button"); bC.textContent = "CLR";
   bC.title = "Clear row"; bC.addEventListener("click", () => {
     tr.steps.fill(false);
-    row.querySelectorAll(".cell").forEach(c => c.classList.remove("on"));
-    autosave();
+    tr.notes = defaultNotes(); tr.melody = "off";
+    renderTracks(); autosave();
   });
   const bX = document.createElement("button"); bX.textContent = "✕";
   bX.title = "Remove track"; bX.addEventListener("click", () => {
@@ -3255,9 +3482,21 @@ function trackRowEl(tr){
       (i >= loopStepsFor(loopBars) ? " outLoop" : "");
     c.dataset.step = i;
     if (tr.steps[i]) c.classList.add("on");
+    /* v2.3: show the scale degree on melodic steps */
+    const deg = noteAtStep(tr, i);
+    if (tr.steps[i] && deg !== 0){
+      c.classList.add("mel");
+      c.textContent = (deg > 0 ? "+" : "") + deg;
+    }
     c.addEventListener("click", () => {
       tr.steps[i] = !tr.steps[i];
-      c.classList.toggle("on", tr.steps[i]);
+      if (tr.melody && tr.melody !== "off"){
+        /* new step joins the melody pattern; re-stamp + re-render */
+        tr.notes = applyMelodyPattern(tr, tr.melody);
+        renderTracks();
+      } else {
+        c.classList.toggle("on", tr.steps[i]);
+      }
       autosave();
     });
     cells.appendChild(c);
