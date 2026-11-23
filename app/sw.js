@@ -1,6 +1,6 @@
 /* Fruity McLoops service worker — cache-first so the app works fully offline.
    Bump CACHE_VERSION whenever index.html or the PWA files change. */
-const CACHE_VERSION = 'fruity-mcloops-v2.3';
+const CACHE_VERSION = 'fruity-mcloops-v2.4';
 const APP_FILES = [
   './',
   './index.html',

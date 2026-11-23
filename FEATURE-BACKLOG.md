@@ -5,19 +5,20 @@ off here, and add at least one new idea each week.
 
 ## To do
 
-- [ ] Echo-out effect on pause — when the sequencer stops, let the delay /
-  reverb tail ring out instead of cutting dead.
 - [ ] Preset morph pairs — curated preset pairs designed to morph into each
   other (e.g. House → Dubstep) with one morph slider move.
 - [ ] Beat-matched transitions — deck-to-deck transitions that auto-match BPM
   and phase (builds on the existing `syncRate` helper).
-- [ ] Per-step note editor — tap a melodic step to cycle its scale degree
-  by hand (v2.3 only stamps whole patterns; no manual per-step editing yet).
-- [ ] Melody randomize button — one-tap "surprise me" that re-rolls the
-  random / walk pattern with a new seed.
 - [ ] More demo songs — keep growing the Downloads page (8 in v2.3).
 - [ ] More sounds / instruments — keep growing the synthesized library
-  (117 sounds in v2.3, zero samples).
+  (117 sounds in v2.4, zero samples).
+- [ ] Melody seed in project files — save each track's re-rolled melody seed
+  so a 🎲 re-roll survives save/load instead of falling back to the
+  deterministic seed (v2.4 keeps the seed in memory only).
+- [ ] Echo-out length control — let the echo-out tail time (currently a
+  fixed 2.6 s) follow the delay-time slider or a dedicated knob.
+- [ ] Step velocity — per-step loudness (tap a lit step twice to cycle
+  soft → normal → accent) for more human grooves.
 
 ## Shipped
 
@@ -30,7 +31,10 @@ off here, and add at least one new idea each week.
   slider.
 - [x] iOS/Android PWA packaging — manifest, offline service worker, icons
   (GitHub Pages).
-- [x] v2.3 — per-step melodic notes from track scale (Rise / Fall / Up & Down
-  / Arp / Random / Walk patterns per track, degrees shown on steps, saved in
-  projects), 12 new sounds (117 total), 2 new demo songs (Neon Skyline,
-  Garage Door — 8 total, with melody patterns baked in), PWA cache bump.
+- [x] v2.4 — echo-out on pause (delay feedback opens to 0.62 for 2.6 s on
+  STOP, toggleable, persisted in DJ settings), melody re-roll 🎲 button
+  per track (fresh seed; Random/Walk keep their pattern, anything else
+  switches to Random; seed kept in memory), per-step note editor (tap a
+  lit melodic step to cycle its scale degree up the scale and wrap from
+  the octave to the root; Shift-click/right-click clears; hand edits
+  stick until the pattern is re-applied), PWA cache bump.

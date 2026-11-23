@@ -687,8 +687,85 @@ Object.keys(FM.NEW_SOUNDS_V23).forEach(n =>
     check("v2.3 new sound runs on stub ctx: " + n, ok);
   });
 }
-check("v2.3 in-app version text is 2.3",
-  html.includes("v2.3") && html.includes("117 built-in sounds"));
+check("v2.4 in-app version text is 2.4",
+  html.includes("v2.4") && html.includes("Fruity McLoops v2.4 — 117 built-in sounds") &&
+  html.includes("dubstep machine • v2.4"));
+
+/* ---------- v2.4: echo-out on pause ---------- */
+check("v2.4 ECHO_OUT constants sane",
+  FM.ECHO_OUT.feedback > FM.ECHO_OUT.restoreFeedback &&
+  FM.ECHO_OUT.feedback > 0 && FM.ECHO_OUT.feedback < 1 &&
+  FM.ECHO_OUT.holdMs > 0 && FM.ECHO_OUT.restoreFeedback >= 0,
+  JSON.stringify(FM.ECHO_OUT));
+{
+  const buses = FM.buildSeqFxBuses(fakeCtx(), fakeNode());
+  check("v2.4 FX buses expose feedback gain node", !!buses.fb && !!buses.fb.gain);
+  const calls = [];
+  const rec = { gain: { setTargetAtTime(v, t, tc){ calls.push([v, t, tc]); return this; } } };
+  const full = { fb: rec, delayWet: rec, revWet: rec };
+  check("v2.4 applyEchoOut ramps feedback up then restores",
+    FM.applyEchoOut(full, 10) === true &&
+    calls.length >= 2 &&
+    calls[0][0] === FM.ECHO_OUT.feedback && calls[0][1] === 10 &&
+    calls.some(c => c[0] === FM.ECHO_OUT.restoreFeedback && c[1] === 10 + FM.ECHO_OUT.holdMs / 1000),
+    "calls=" + JSON.stringify(calls));
+  check("v2.4 applyEchoOut rejects missing buses",
+    FM.applyEchoOut(null, 0) === false && FM.applyEchoOut({}, 0) === false);
+  check("v2.4 stopSeq wires echo-out + toggle exists",
+    html.includes("applyEchoOut(N.seqFx, ctx.currentTime)") &&
+    html.includes("echoOutChk") && html.includes("Echo-out on stop"));
+  check("v2.4 echoOut defaults on and sanitizes",
+    FM.DEFAULT_DJ_SETTINGS.echoOut === true &&
+    FM.sanitizeDJSettings({}).echoOut === true &&
+    FM.sanitizeDJSettings({ echoOut: false }).echoOut === false);
+}
+
+/* ---------- v2.4: melody re-roll + per-step note editor ---------- */
+{
+  const tr = FM.mkTrack("pluck", FM.pattern("x...x...x...x...", "................", "................", "................"));
+  tr.melody = "rise";
+  const a = FM.rerollMelody(tr, 12345);
+  const notesA = tr.notes.slice();
+  check("v2.4 reroll keeps rise? no — switches deterministic pattern to random",
+    a === "random" && tr.melody === "random" && notesA.some(n => n !== 0));
+  const b = FM.rerollMelody(tr, 12345);
+  check("v2.4 reroll is deterministic for the same seed",
+    JSON.stringify(tr.notes) === JSON.stringify(notesA));
+  FM.rerollMelody(tr, 999);
+  check("v2.4 reroll with a new seed changes the notes",
+    JSON.stringify(tr.notes) !== JSON.stringify(notesA));
+  tr.melody = "walk";
+  FM.rerollMelody(tr, 777);
+  check("v2.4 reroll keeps walk pattern", tr.melody === "walk");
+  tr.melody = "off";
+  FM.rerollMelody(tr, 5);
+  check("v2.4 reroll from off switches to random", tr.melody === "random");
+  check("v2.4 rerollMelody returns off for a bad track", FM.rerollMelody(null, 1) === "off");
+}
+{
+  const tr = FM.mkTrack("pluck", FM.pattern("x...............", "................", "................", "................"));
+  tr.melody = "rise";
+  tr.notes = FM.applyMelodyPattern(tr, "rise");
+  const ivLen = FM.scaleIntervals(FM.sanitizeTrackPitch(tr).scale).length;
+  check("v2.4 cycleStepDegree starts at root degree 0", FM.noteAtStep(tr, 0) === 0);
+  const d1 = FM.cycleStepDegree(tr, 0);
+  check("v2.4 cycleStepDegree steps up one degree", d1 === 1 && FM.noteAtStep(tr, 0) === 1);
+  for (let i = 0; i < ivLen; i++) FM.cycleStepDegree(tr, 0);
+  check("v2.4 cycleStepDegree wraps from the octave back to root",
+    FM.noteAtStep(tr, 0) === 0, "ivLen=" + ivLen + " deg=" + FM.noteAtStep(tr, 0));
+  check("v2.4 cycleStepDegree ignores out-of-range steps",
+    FM.cycleStepDegree(tr, -1) === 0 && FM.cycleStepDegree(tr, 999) === 0);
+  check("v2.4 cycleStepDegree plays through the channel chain",
+    FM.playTrackSound(fakeCtx(), fakeNode(), 0, tr, null,
+      { pitchFactor: FM.stepPitchFactor(tr, 0), freq: FM.stepRootFreq(tr, 0) }) === true);
+}
+check("v2.4 melody UI has re-roll button + tap-to-cycle wiring",
+  html.includes("rerollMelody(tr)") && html.includes("cycleStepDegree(tr, i)") &&
+  html.includes("notesEdited") && html.includes("🎲") &&
+  html.includes("Shift-click") && html.includes("contextmenu"));
+check("v2.4 PWA cache bumped to v2.4",
+  fs.readFileSync(path.join(__dirname, "..", "app", "sw.js"), "utf8")
+    .includes("fruity-mcloops-v2.4"));
 
 console.log("\n" + pass + " passed, " + fail + " failed");
 process.exit(fail ? 1 : 0);

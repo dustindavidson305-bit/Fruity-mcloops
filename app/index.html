@@ -219,7 +219,7 @@ details.chanStrip .chanBody{padding:4px 12px 12px;border-top:1px solid var(--lin
 </div>
 
 <h1>🍊 <span class="fm1">FRUITY</span> <span class="fm2">McLOOPS</span></h1>
-<div class="tagline">4-deck DJ workstation • scratch • step sequencer • mixer • dubstep machine • v2.3</div>
+<div class="tagline">4-deck DJ workstation • scratch • step sequencer • mixer • dubstep machine • v2.4</div>
 <nav id="jumpNav">
   <a href="#deckPanel">🎧 Decks</a><a href="#fxPanel">🎛️ FX Rack</a><a href="#libPanel">🎹 Library</a>
   <a href="#mySoundsPanel">🎧 My Sounds</a><a href="#labPanel">🎚️ Track Lab</a>
@@ -435,6 +435,7 @@ details.chanStrip .chanBody{padding:4px 12px 12px;border-top:1px solid var(--lin
     <button id="seqPlayBtn" style="font-size:16px;padding:12px 18px;">▶ PLAY</button>
     <button id="seqStopBtn" style="font-size:16px;padding:12px 18px;">⏹ STOP</button>
     <span id="barLabel">BAR 1/4</span>
+    <label class="lbl" style="margin:0;"><input type="checkbox" id="echoOutChk" checked> 🔊 Echo-out on stop</label>
   </div>
   <div class="rowflex" style="margin-top:10px;">
     <label class="lbl" style="margin:0;">🔁 Loop length
@@ -448,7 +449,7 @@ details.chanStrip .chanBody{padding:4px 12px 12px;border-top:1px solid var(--lin
       </select></label>
     <span id="loopInfo" class="tabnote">Loop: 4 bars • 64 steps</span>
     <span class="note">The grid holds 8 bars (128 steps). Steps past the loop end stay saved, just dimmed — stretch the loop any time and they're still there.</span>
-    <span class="note">🎵 <b>Melody (v2.3):</b> each track has a 🎵 dropdown — pick Rise, Arp, Walk… and its steps play different notes from the track's key &amp; scale instead of one pitch. The number on a step is its scale degree (+3 = three steps up the scale).</span>
+    <span class="note">🎵 <b>Melody (v2.3+):</b> each track has a 🎵 dropdown — pick Rise, Arp, Walk… and its steps play different notes from the track's key &amp; scale instead of one pitch. The number on a step is its scale degree (+3 = three steps up the scale). <b>v2.4:</b> tap a lit melodic step to cycle its note up the scale, Shift-click (or right-click) to clear it, and hit 🎲 next to the dropdown to re-roll the melody. 🔊 Echo-out on stop lets the delay/reverb tail ring out when you hit STOP.</span>
   </div>
   <details class="barTools">
     <summary>🧰 Bar tools — copy, fill &amp; clear bars (all tracks at once)</summary>
@@ -509,7 +510,7 @@ details.chanStrip .chanBody{padding:4px 12px 12px;border-top:1px solid var(--lin
   </div>
 </div>
 
-<div class="note" style="text-align:center;">Fruity McLoops v2.3 — 117 built-in sounds synthesized live, 1–8 bar loops, a channel strip for every sound, per-step melodic notes from each track's scale, 4 DJ decks with stems, plus your own custom sounds. No samples were harmed. 🍊</div>
+<div class="note" style="text-align:center;">Fruity McLoops v2.4 — 117 built-in sounds synthesized live, 1–8 bar loops, a channel strip for every sound, per-step melodic notes you can tap to edit and re-roll, echo-out on stop, 4 DJ decks with stems, plus your own custom sounds. No samples were harmed. 🍊</div>
 
 <!-- ================= DOWNLOADS ================= -->
 <div class="panel" id="dlPanel" data-fold="closed">
@@ -1708,7 +1709,36 @@ function buildSeqFxBuses(c, dest){
   const revWet = c.createGain(); revWet.gain.value = 0.9;
   revIn.connect(conv); conv.connect(revWet); revWet.connect(dest);
   return { delay: delayIn, reverb: revIn, delayNode: delay, delayWet: delayWet,
-           conv: conv, revWet: revWet };
+           fb: fb, conv: conv, revWet: revWet };
+}
+/* ============================================================
+   v2.4 — ECHO-OUT ON PAUSE.
+   When the sequencer stops, the delay/reverb tails used to die
+   almost instantly (feedback 0.38). Echo-out opens the delay
+   feedback and the return wets for a couple of seconds so the
+   last hits ring out, then restores the normal mix. Pure except
+   for the setTimeout that restores the mix (guarded so the
+   headless tests can call it without a timer).
+   ============================================================ */
+const ECHO_OUT = { feedback: 0.62, holdMs: 2600, restoreFeedback: 0.38 };
+function applyEchoOut(buses, t){
+  if (!buses || !buses.fb || !buses.fb.gain ||
+      typeof buses.fb.gain.setTargetAtTime !== "function") return false;
+  const now = (typeof t === "number" && isFinite(t)) ? t : 0;
+  const backAt = now + ECHO_OUT.holdMs / 1000;
+  buses.fb.gain.setTargetAtTime(ECHO_OUT.feedback, now, 0.05);
+  buses.fb.gain.setTargetAtTime(ECHO_OUT.restoreFeedback, backAt, 0.1);
+  if (buses.delayWet && buses.delayWet.gain &&
+      typeof buses.delayWet.gain.setTargetAtTime === "function"){
+    buses.delayWet.gain.setTargetAtTime(1.0, now, 0.05);
+    buses.delayWet.gain.setTargetAtTime(0.9, backAt, 0.1);
+  }
+  if (buses.revWet && buses.revWet.gain &&
+      typeof buses.revWet.gain.setTargetAtTime === "function"){
+    buses.revWet.gain.setTargetAtTime(1.0, now, 0.05);
+    buses.revWet.gain.setTargetAtTime(0.9, backAt, 0.1);
+  }
+  return true;
 }
 
 /* ============================================================
@@ -1994,6 +2024,36 @@ function applyMelodyPattern(tr, pattern, seed){
   });
   return notes;
 }
+/* ============================================================
+   v2.4 — MELODY RE-ROLL + PER-STEP NOTE EDITOR.
+   rerollMelody: give a track a fresh melody with a new seed.
+   Random / Walk patterns keep their pattern and just get a new
+   seed; anything else switches to Random so the button always
+   does something audible. The seed lives on the track (in
+   memory only — projects reload with the deterministic seed),
+   so later step toggles re-stamp the same rolled melody.
+   cycleStepDegree: tap a lit melodic step to walk its note up
+   the scale one degree at a time, wrapping from the octave back
+   to the root. Returns the new degree.
+   ============================================================ */
+function rerollMelody(tr, seed){
+  if (!tr || !Array.isArray(tr.steps)) return "off";
+  if (tr.melody !== "random" && tr.melody !== "walk") tr.melody = "random";
+  tr.melodySeed = (typeof seed === "number" && isFinite(seed))
+    ? (seed | 0) : ((Math.random() * 2147483647) | 0);
+  tr.notes = applyMelodyPattern(tr, tr.melody, tr.melodySeed);
+  tr.notesEdited = false;
+  return tr.melody;
+}
+function cycleStepDegree(tr, step){
+  if (!tr || !Array.isArray(tr.notes) ||
+      step == null || step < 0 || step >= MAX_STEPS) return 0;
+  const ivLen = scaleIntervals(sanitizeTrackPitch(tr).scale).length;
+  const cur = noteAtStep(tr, step);
+  const next = (cur + 1) % (ivLen + 1);
+  tr.notes[step] = next;
+  return next;
+}
 /* sparse pairs for project files: only non-zero notes are stored */
 function notesToPairs(notes){
   const out = [];
@@ -2195,14 +2255,15 @@ function syncRate(aBpm, deckBpm){
    v2.1 DJ WORKSTATION + SAMPLING — pure helpers.
    ============================================================ */
 const DJ_SETTINGS_KEY = "fm_dj_settings_v1";
-const DEFAULT_DJ_SETTINGS = { xfCurve: "smooth", pitchRange: 16, quantize: true, limiter: true };
+const DEFAULT_DJ_SETTINGS = { xfCurve: "smooth", pitchRange: 16, quantize: true, limiter: true, echoOut: true };
 function sanitizeDJSettings(o){
   o = o || {};
   return {
     xfCurve: ["smooth", "sharp", "cut"].indexOf(o.xfCurve) >= 0 ? o.xfCurve : "smooth",
     pitchRange: [8, 16, 50].indexOf(+o.pitchRange) >= 0 ? +o.pitchRange : 16,
     quantize: o.quantize !== false,
-    limiter: o.limiter !== false
+    limiter: o.limiter !== false,
+    echoOut: o.echoOut !== false
   };
 }
 /* 3-band EQ: slider -50..50 -> dB. Bottom of travel is a full kill. */
@@ -2318,11 +2379,12 @@ if (typeof module !== "undefined" && module.exports){
     buildToneChain, applyToneToChain, playTrackSound,
     MELODY_PATTERNS, MELODY_PATTERN_NAMES, defaultNotes, sanitizeNotes,
     noteAtStep, stepRootFreq, stepPitchFactor, applyMelodyPattern,
+    rerollMelody, cycleStepDegree,
     notesToPairs, pairsToNotes,
     LOOP_BARS_OPTIONS, MAX_BARS, STEPS_PER_BAR, MAX_STEPS, sanitizeLoopBars,
     loopStepsFor, barOfStep, stepInLoop, copyBarSteps, clearBarSteps,
     fillLoopFromBar, defaultChannel, sanitizeChannel, applyChannelToChain,
-    buildSeqFxBuses, NEW_SOUNDS_V22, NEW_SOUNDS_V23,
+    buildSeqFxBuses, ECHO_OUT, applyEchoOut, NEW_SOUNDS_V22, NEW_SOUNDS_V23,
     STEM_MODES, stemGains, stemSample, buildStemChain,
     DECK_LETTERS, crossfaderGain, syncRate,
     DJ_SETTINGS_KEY, DEFAULT_DJ_SETTINGS, sanitizeDJSettings,
@@ -3350,6 +3412,9 @@ function stopSeq(){
   $("seqPlayBtn").classList.remove("on");
   $("seqPlayBtn").textContent = "▶ PLAY";
   $("barLabel").textContent = "BAR 1/" + loopBars;
+  /* v2.4: echo-out — let the delay/reverb tails ring instead of
+     cutting dead when the sequencer stops. */
+  if (djSettings.echoOut && ctx && N.seqFx) applyEchoOut(N.seqFx, ctx.currentTime);
 }
 function highlightStep(s){
   if (prevStep >= 0){
@@ -3428,10 +3493,22 @@ function trackRowEl(tr){
   });
   melSel.addEventListener("change", () => {
     tr.melody = melSel.value;
-    tr.notes = applyMelodyPattern(tr, tr.melody);
+    tr.notesEdited = false;
+    tr.notes = applyMelodyPattern(tr, tr.melody, tr.melodySeed);
     renderTracks(); autosave();
   });
   head.appendChild(melSel);
+  /* v2.4: 🎲 re-roll this track's melody with a fresh seed */
+  const bRoll = document.createElement("button");
+  bRoll.textContent = "🎲";
+  bRoll.className = "small";
+  bRoll.title = "Surprise me — re-roll this track's melody with a fresh seed (Random / Walk keep their pattern, anything else switches to Random)";
+  bRoll.addEventListener("click", () => {
+    const pat = rerollMelody(tr);
+    status("Melody re-rolled: " + tr.sound + " now plays " + MELODY_PATTERNS[pat].label + " 🎲");
+    renderTracks(); autosave();
+  });
+  head.appendChild(bRoll);
   const mkSlider = (label, min, max, val, fn) => {
     const d = document.createElement("div"); d.className = "mini";
     const s = document.createElement("span"); s.textContent = label;
@@ -3465,6 +3542,7 @@ function trackRowEl(tr){
   bC.title = "Clear row"; bC.addEventListener("click", () => {
     tr.steps.fill(false);
     tr.notes = defaultNotes(); tr.melody = "off";
+    tr.melodySeed = undefined; tr.notesEdited = false;
     renderTracks(); autosave();
   });
   const bX = document.createElement("button"); bX.textContent = "✕";
@@ -3488,16 +3566,36 @@ function trackRowEl(tr){
       c.classList.add("mel");
       c.textContent = (deg > 0 ? "+" : "") + deg;
     }
-    c.addEventListener("click", () => {
+    c.addEventListener("click", (ev) => {
+      /* v2.4: per-step note editor — tap a lit melodic step to cycle
+         its note up the scale (wraps from the octave back to the
+         root); Shift-click (or right-click) clears the step. Manual
+         edits stick: later toggles don't re-stamp the pattern until
+         you pick a new pattern or hit 🎲. */
+      if (tr.melody && tr.melody !== "off" && tr.steps[i] && !ev.shiftKey){
+        cycleStepDegree(tr, i);
+        tr.notesEdited = true;
+        renderTracks(); autosave();
+        return;
+      }
       tr.steps[i] = !tr.steps[i];
       if (tr.melody && tr.melody !== "off"){
-        /* new step joins the melody pattern; re-stamp + re-render */
-        tr.notes = applyMelodyPattern(tr, tr.melody);
+        /* new step joins the melody pattern; re-stamp + re-render
+           (unless you've hand-edited notes — those stick) */
+        if (!tr.notesEdited) tr.notes = applyMelodyPattern(tr, tr.melody, tr.melodySeed);
         renderTracks();
       } else {
         c.classList.toggle("on", tr.steps[i]);
       }
       autosave();
+    });
+    c.addEventListener("contextmenu", (ev) => {
+      ev.preventDefault();
+      if (!tr.steps[i]) return;
+      tr.steps[i] = false;
+      if (tr.melody && tr.melody !== "off" && !tr.notesEdited)
+        tr.notes = applyMelodyPattern(tr, tr.melody, tr.melodySeed);
+      renderTracks(); autosave();
     });
     cells.appendChild(c);
   }
@@ -4240,6 +4338,15 @@ function wire(){
   /* sequencer */
   $("seqPlayBtn").addEventListener("click", startSeq);
   $("seqStopBtn").addEventListener("click", stopSeq);
+  /* v2.4: echo-out toggle (persisted with the DJ settings) */
+  const echoChk = $("echoOutChk");
+  if (echoChk){
+    echoChk.checked = djSettings.echoOut !== false;
+    echoChk.addEventListener("change", () => {
+      djSettings.echoOut = echoChk.checked; saveDjSettings();
+      status(echoChk.checked ? "Echo-out on stop: ON 🔊" : "Echo-out on stop: OFF");
+    });
+  }
   $("bpm").addEventListener("input", () => { bpm = +$("bpm").value; syncFxLabels(); if (ctx) applyFx(); autosave(); });
   /* v2.2: loop length + bar tools */
   updateLoopInfo();
